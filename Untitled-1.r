@@ -81,3 +81,35 @@ realgdp2$value = realgdp2$value - deflator2$value
 mean(realgdp2$value)
 
 plot(realgdp$date, realgdp$value, type="h")
+plot(realgdp1$date, realgdp1$value, type="h")
+plot(realgdp2$date, realgdp2$value, type="h")
+
+census=read.csv("economicensus.csv", sep=",")
+
+labshare = fredr(
+  series_id = "LABSHPUSA156NRUG",
+  observation_start = as.Date("1981-01-01"),
+  observation_end = as.Date("2020-12-31"),
+  frequency = "a"
+)
+
+labshare1 = fredr(
+  series_id = "LABSHPUSA156NRUG",
+  observation_start = as.Date("1981-01-01"),
+  observation_end = as.Date("1990-12-31"),
+  frequency = "a"
+)
+
+labshare2 = fredr(
+  series_id = "LABSHPUSA156NRUG",
+  observation_start = as.Date("2011-01-01"),
+  observation_end = as.Date("2019-12-31"),
+  frequency = "a"
+)
+
+
+labshare = data.frame(labshare)
+
+labshare1 = data.frame(labshare1)
+
+labshare2 = data.frame(labshare2)
