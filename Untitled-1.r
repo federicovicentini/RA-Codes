@@ -113,3 +113,16 @@ labshare = data.frame(labshare)
 labshare1 = data.frame(labshare1)
 
 labshare2 = data.frame(labshare2)
+
+
+
+#API key for bls is: 7b39505b098044f886d056883d2bd925
+
+#library(blsAPI)
+library(wbstats)
+
+s=wb_search("compensation of employees")
+comp=wb_data(country="US","GC.XPN.COMP.CN")
+
+s=fredr_series_search_text("compensation")
+View(s)
