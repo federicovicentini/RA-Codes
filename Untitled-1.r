@@ -126,3 +126,19 @@ comp=wb_data(country="US","GC.XPN.COMP.CN")
 
 s=fredr_series_search_text("compensation")
 View(s)
+
+labforce=read.csv("civilianlaborforce.csv", sep=",")
+labforce=subset(labforce, labforce$Period=="M12")
+
+nomgdp = fredr(
+  series_id = "GDP",
+  observation_start = as.Date("1981-01-01"),
+  observation_end = as.Date("2020-12-31"),
+  frequency = "a",
+  units = "lin",
+  aggregation_method = "eop"
+)
+
+library(Rilostat)
+get_ilostat(STE_ICSE93_1)
+
