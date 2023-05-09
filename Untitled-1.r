@@ -125,10 +125,10 @@ s=wb_search("compensation of employees")
 comp=wb_data(country="US","GC.XPN.COMP.CN")
 
 s=fredr_series_search_text("compensation")
-View(s)
+#View(s)
 
-labforce=read.csv("civilianlaborforce.csv", sep=",")
-labforce=subset(labforce, labforce$Period=="M12")
+labforce1=read.csv("civilianlaborforce.csv", sep=",")
+labforce1=subset(labforce1, labforce1$Period=="M12")
 
 nomgdp = fredr(
   series_id = "GDP",
@@ -140,5 +140,145 @@ nomgdp = fredr(
 )
 
 library(Rilostat)
-get_ilostat(STE_ICSE93_1)
 
+#This should be the correct indicator to use for the labor force level
+labforce=get_ilostat("EAP_TEAP_SEX_AGE_NB_A")
+labforce=subset(labforce, labforce$indicator=="EAP_TEAP_SEX_AGE_NB"&
+                          labforce$ref_area=="USA"&
+                          labforce$classif1=="AGE_AGGREGATE_TOTAL"&
+                          labforce$sex=="SEX_T"&
+                          labforce$time>=1980)
+toc=get_ilostat_toc()
+
+# Load the dplyr package
+library(dplyr)
+
+# Assume your dataframe is called "my_df" and your time column is called "time"
+# Sort the dataframe in ascending order of time
+labforce <- labforce %>% arrange(labforce$time)
+plot(labforce1$Value-labforce$obs_value)
+
+#Download and filter the dataset with all employed by status
+empl=get_ilostat("EMP_TEMP_SEX_AGE_STE_NB_A")
+empl=subset(empl, empl$indicator=="EMP_TEMP_SEX_AGE_STE_NB"&
+                  empl$ref_area=="USA"&
+                  empl$classif1=="AGE_AGGREGATE_TOTAL"&
+                  empl$classif2 == "STE_AGGREGATE_TOTAL"&
+                  empl$sex=="SEX_T"&
+                  empl$time>=1980)
+
+#To get only employees, filter for STE_ICSE93_1
+emplee=get_ilostat("EMP_TEMP_SEX_AGE_STE_NB_A")
+emplee=subset(emplee, emplee$indicator=="EMP_TEMP_SEX_AGE_STE_NB"&
+                      emplee$ref_area=="USA"&
+                      emplee$classif1=="AGE_AGGREGATE_TOTAL"&
+                      emplee$classif2 == "STE_ICSE93_1"&
+                      emplee$sex=="SEX_T"&
+                      emplee$time>=1980)
+
+#Filter for STE_ICSE93_3
+icse93_3=get_ilostat("EMP_TEMP_SEX_AGE_STE_NB_A")
+icse93_3=subset(icse93_3, icse93_3$indicator=="EMP_TEMP_SEX_AGE_STE_NB"&
+                      icse93_3$ref_area=="USA"&
+                      icse93_3$classif1=="AGE_AGGREGATE_TOTAL"&
+                      icse93_3$classif2 == "STE_ICSE93_3"&
+                      icse93_3$sex=="SEX_T"&
+                      icse93_3$time>=1980)
+
+#Filter for STE_ICSE93_5
+icse93_5=get_ilostat("EMP_TEMP_SEX_AGE_STE_NB_A")
+icse93_5=subset(icse93_5, icse93_5$indicator=="EMP_TEMP_SEX_AGE_STE_NB"&
+                      icse93_5$ref_area=="USA"&
+                      icse93_5$classif1=="AGE_AGGREGATE_TOTAL"&
+                      icse93_5$classif2 == "STE_ICSE93_5"&
+                      icse93_5$sex=="SEX_T"&
+                      icse93_5$time>=1980)
+
+#Filter for STE_AGGREGATE_SLF
+aggslf=get_ilostat("EMP_TEMP_SEX_AGE_STE_NB_A")
+aggslf=subset(aggslf, aggslf$indicator=="EMP_TEMP_SEX_AGE_STE_NB"&
+                      aggslf$ref_area=="USA"&
+                      aggslf$classif1=="AGE_AGGREGATE_TOTAL"&
+                      aggslf$classif2 == "STE_AGGREGATE_SLF"&
+                      aggslf$sex=="SEX_T"&
+                      aggslf$time>=1980)
+
+#Merge the dataframes
+merged_df <- merge(df1, df2["Date", "Value", drop = FALSE], by = "Date", all = TRUE)
+
+empl = select(empl, time, obs_value)
+names(empl)[2]="empl"
+
+emplee = select(emplee, time, obs_value)
+names(emplee)[2]="emplee"
+
+icse93_3 = select(icse93_3, time, obs_value)
+names(icse93_3)[2]="icse93_3"
+
+icse93_5 = select(icse93_5, time, obs_value)
+names(icse93_5)[2]="icse93_5"
+
+aggslf = select(aggslf, time, obs_value)
+names(aggslf)[2]="aggslf"
+
+labforce = select(labforce, time, obs_value)
+names(labforce)[2]="labforce"
+
+mergemp <- empl %>%
+            merge(labforce, by = "time") %>%
+            merge(emplee, by = "time") %>%
+            merge(icse93_3, by = "time") %>%
+            merge(icse93_5, by = "time") %>%
+            merge(aggslf, by = "time")
+
+
+toc=get_ilostat_toc()
+
+# Calculate the number of employers as aggslf - icse93_3 - icse93_5
+# this is under the assumption that icse93_4 is negligible
+# in fact is around 8k workers for the US economy as a whole
+
+mergemp$emplrs = mergemp$aggslf - mergemp$icse93_3 - mergemp$icse93_5
+
+
+# For lack of available data, we will use  LS5 and not LS6
+#Now, calculate the multiplier of the compensation for every year
+mergemp$mult = mergemp$labforce/mergemp$emplee
+
+
+#Now retrieve data from the un on aggregates
+un = read.csv("un-nsa-aggregates.txt", sep=";")
+names(un)[6]="time"
+
+valueadd = subset(un, un$SNA93.Item.Code == "B.1g" &
+                      un$Series == "1000")
+valueadd = select(valueadd, time, Value)
+names(valueadd)[2]="valueadd"
+
+
+capcons = subset(un, un$SNA93.Item.Code == "K.1" &
+                      un$Series == "1000")
+capcons = select(capcons, time, Value)
+names(capcons)[2]="capcons"
+
+compens = subset(un, un$SNA93.Item.Code == "D.1" &
+                      un$Series == "1000")
+compens = select(compens, time, Value)
+names(compens)[2]="compens"
+
+indtax = subset(un, un$SNA93.Item.Code == "D.2-D.3" &
+                      un$Series == "1000")
+indtax = select(indtax, time, Value)
+names(indtax)[2]="indtax"
+
+mergeun <- valueadd %>%
+            merge(capcons, by = "time") %>%
+            merge(compens, by = "time") %>%
+            merge(indtax, by = "time")
+
+merge <- mergeun %>%
+        merge(mergemp, by = "time", all.x = TRUE)
+
+# Now, calculate the labor share
+merge$ls5 = (merge$compens * merge$mult) / 
+              (merge$valueadd - merge$indtax - merge$capcons)
