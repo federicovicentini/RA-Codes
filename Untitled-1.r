@@ -249,36 +249,64 @@ mergemp$mult = mergemp$labforce/mergemp$emplee
 #Now retrieve data from the un on aggregates
 un = read.csv("un-nsa-aggregates.txt", sep=";")
 names(un)[6]="time"
+un = un[order(un$time), ]
 
 valueadd = subset(un, un$SNA93.Item.Code == "B.1g" &
-                      un$Series == "1000")
+                      un$Series == "100")
 valueadd = select(valueadd, time, Value)
 names(valueadd)[2]="valueadd"
 
+capcons1 = subset(un, un$SNA93.Item.Code == "K.1" &
+                      un$Series==100)
 
-capcons = subset(un, un$SNA93.Item.Code == "K.1" &
-                      un$Series == "1000")
-capcons = select(capcons, time, Value)
-names(capcons)[2]="capcons"
 
-compens = subset(un, un$SNA93.Item.Code == "D.1" &
-                      un$Series == "1000")
-compens = select(compens, time, Value)
-names(compens)[2]="compens"
 
-indtax = subset(un, un$SNA93.Item.Code == "D.2-D.3" &
-                      un$Series == "1000")
-indtax = select(indtax, time, Value)
-names(indtax)[2]="indtax"
+capcons2 = subset(un, un$SNA93.Item.Code == "K.1" &
+                      un$Series==1000)
 
-mergeun <- valueadd %>%
-            merge(capcons, by = "time") %>%
-            merge(compens, by = "time") %>%
-            merge(indtax, by = "time")
 
-merge <- mergeun %>%
-        merge(mergemp, by = "time", all.x = TRUE)
+#Use the time period of the interregnum (1995-2011), and maybe cut in two (1995-2008)
+#Regression with sna2008 as dependent var and sna1993 as regressor
+#Coefficient will be our conversion factor.
+#Evaluate the model, then check if it can replicate the other series
+#and check for violations of assumptions
 
-# Now, calculate the labor share
-merge$ls5 = (merge$compens * merge$mult) / 
-              (merge$valueadd - merge$indtax - merge$capcons)
+#Apply to convert the vintage period
+
+library(stargazer)
+
+findconversion = function(s1,s2){
+  train = lm(s1 ~ s2)
+  stargazer(train, type = "text")
+  coef = train$coefficients
+  return(coef)
+}
+
+# First is the fixed cap cons, then gross value added
+# then compensation and lastly indirect taxes
+
+
+codelist = c("K.1", "B.1g", "D.1", "D.2-D.3")
+
+codenames = c("time","fcc", "gdp", "wages", "ind_tax")
+
+ts=data.frame(seq(1980,2020,1))
+
+
+for(i in 1:length(codelist)){
+  ts93 = subset(un, un$SNA93.Item.Code == codelist[i] &
+                      un$Series == 100 & un$time <= 2011 & un$time >= 1995)
+  ts08 = subset(un, un$SNA93.Item.Code == codelist[i] &
+                      un$Series == 1000 & un$time <= 2011 & un$time >= 1995)
+  tsold = subset(un, un$SNA93.Item.Code == codelist[i] &
+                      un$Series == 100 & un$time < 1995)
+  tsnew = subset(un, un$SNA93.Item.Code == codelist[i] &
+                      un$Series == 1000 & un$time >= 1995)
+  coef = findconversion(ts08$Value, ts93$Value)
+  simts08 = tsold$Value * coef[2] + coef[1]
+  addts=c(simts08, tsnew$Value)
+  ts[,i+1]=addts
+  plot(addts, type = "o")
+}
+
+names(ts) = codenames
