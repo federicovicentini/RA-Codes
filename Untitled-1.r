@@ -2,6 +2,7 @@
 # 01 - 05 - 2023
 # Download Code RA Data
 
+setwd(C:\Users\feder\OneDrive\Documenti Fede\Scuola\Università\MSc in Economics\Research Assistantship\R Codes\RA-Codes)
 
 library(fredr)
 fredr_set_key("5946a6a1c79f3fe49bea4be0ef8e82e8")
@@ -230,8 +231,7 @@ mergemp <- empl %>%
             merge(icse93_3, by = "time") %>%
             merge(icse93_5, by = "time") %>%
             merge(aggslf, by = "time")
-
-
+            
 toc=get_ilostat_toc()
 
 # Calculate the number of employers as aggslf - icse93_3 - icse93_5
@@ -251,18 +251,6 @@ un = read.csv("un-nsa-aggregates.txt", sep=";")
 names(un)[6]="time"
 un = un[order(un$time), ]
 
-valueadd = subset(un, un$SNA93.Item.Code == "B.1g" &
-                      un$Series == "100")
-valueadd = select(valueadd, time, Value)
-names(valueadd)[2]="valueadd"
-
-capcons1 = subset(un, un$SNA93.Item.Code == "K.1" &
-                      un$Series==100)
-
-
-
-capcons2 = subset(un, un$SNA93.Item.Code == "K.1" &
-                      un$Series==1000)
 
 
 #Use the time period of the interregnum (1995-2011), and maybe cut in two (1995-2008)
@@ -306,7 +294,11 @@ for(i in 1:length(codelist)){
   simts08 = tsold$Value * coef[2] + coef[1]
   addts=c(simts08, tsnew$Value)
   ts[,i+1]=addts
-  plot(addts, type = "o")
+  plot(ts[,1], addts, type = "o")
 }
 
 names(ts) = codenames
+
+
+# ricontrolla il paper di Autor sulla fall of labor share
+# and rise of superstar firms
