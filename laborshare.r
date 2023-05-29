@@ -5,7 +5,8 @@
 
 #Initial Operations
 
-setwd(C:\Users\feder\OneDrive\Documenti Fede\Scuola\Università\MSc in Economics\Research Assistantship\R Codes\RA-Codes)
+setwd(C:\Users\feder\OneDrive\Documenti Fede\Scuola\Università\
+      MSc in Economics\Research Assistantship\R Codes\RA-Codes)
 
 
 #API key for bls is: 7b39505b098044f886d056883d2bd925

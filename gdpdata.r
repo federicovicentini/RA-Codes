@@ -2,7 +2,8 @@
 # 01 - 05 - 2023
 # Download Code RA Data
 
-setwd(C:\Users\feder\OneDrive\Documenti Fede\Scuola\Università\MSc in Economics\Research Assistantship\R Codes\RA-Codes)
+setwd(C:\Users\feder\OneDrive\Documenti Fede\Scuola\Università\MSc in 
+      Economics\Research Assistantship\R Codes\RA-Codes)
 
 library(fredr)
 fredr_set_key("5946a6a1c79f3fe49bea4be0ef8e82e8")
