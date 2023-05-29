@@ -2,16 +2,16 @@
 title: "Research Assistantship - Data Collection"
 author: "Federico Vicentini"
 date: "01/05/2023"
-output: html_document
+output: pdf_document
 ---
 
 
-```{r setup, include=FALSE, dev='pdf'}
+```{r setup, include=FALSE}
 library(knitr)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r p0, message=FALSE, echo=FALSE, dev='pdf'}
+```{r p0, message=FALSE, echo=FALSE}
 
 # Clear the variables
 rm(list = ls())
@@ -20,13 +20,13 @@ rm(list = ls())
 
 # Install packages
 packages <- c("eurostat", "stargazer", "fredr", "kableExtra",
-              "here", "knitr", "tinytex", "rmarkdown", "xfun")
+              "here", "knitr", "tinytex", "rmarkdown", "xfun", "pandoc")
 new_packages <- packages[!(packages %in% installed.packages()[, "Package"])]
 if (length(new_packages)) install.packages(new_packages)
 invisible(lapply(packages, library, character.only = TRUE))
 
 # Set the working directory to source file location with
-# setwd(here::here())
+setwd(here::here())
 ```
 
 

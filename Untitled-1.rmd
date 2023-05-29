@@ -1,0 +1,40 @@
+---
+title: "Macroeconomics - Assignment no.1"
+author: "Federico Vicentini , Riccardo Dal Cero, Xhesjana Shametaj, Alice Pratesi"
+date: "27/5/2022"
+output: html_document
+---
+
+
+```{r setup, include=FALSE, dev='svg'}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Initial Operations
+
+```{r p0, message=FALSE, dev='svg'}
+
+# Clear the variables
+rm(list = ls())
+
+# Set the working directory to source file location with
+# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+# Load packages
+library(quantmod)
+library(eurostat)
+
+```
+
+## POINT 1
+
+First of all, we need to download the USA data from the Fred database, using a for cycle and the function $\texttt{getSymbols()}$
+
+```{r p1, dev='svg'}
+
+nipa <- c("EXPGS", "IMPGS", "PCEC", "GDP", "GPDI", "GCE")
+for (i in 1:length(nipa)) {
+  getSymbols(nipa[i], src = "FRED")
+}
+
+```
