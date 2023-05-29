@@ -1,0 +1,28 @@
+---
+title: "Research Assistantship - Data Collection"
+author: "Federico Vicentini"
+date: "01/05/2023"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE, dev='svg'}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r p0, message=FALSE, echo=FALSE, dev='svg'}
+
+# Clear the variables
+rm(list = ls())
+
+# Set the working directory to source file location with
+# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+# Install packages
+packages <- c("tidyverse", "rsdmx", "eurostat", "tbl2xts", 
+              "tidyquant", "BCDating", "pwt10", "dplyr",
+              "stargazer", "car", "fredr", "quantmod", "kableExtra")
+new.packages <- packages[!(packages %in% installed.packages()[, "Package"])]
+if (length(new.packages)) install.packages(new.packages)
+invisible(lapply(packages, library, character.only = TRUE))
+```
