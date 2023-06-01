@@ -86,7 +86,7 @@ plot(realgdp$date, realgdp$value, type="h")
 plot(realgdp1$date, realgdp1$value, type="h")
 plot(realgdp2$date, realgdp2$value, type="h")
 
-census=read.csv("economicensus.csv", sep=",")
+#census=read.csv("economicensus.csv", sep=",")
 
 labshare = fredr(
   series_id = "LABSHPUSA156NRUG",

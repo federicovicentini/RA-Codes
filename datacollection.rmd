@@ -9,7 +9,7 @@ bibliography: references.bib
 
 ```{r setup, include=FALSE}
 library(knitr)
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ```{r p0, message=FALSE, echo=FALSE}
@@ -22,7 +22,7 @@ rm(list = ls())
 # Install packages
 packages <- c("eurostat", "stargazer", "fredr", "kableExtra",
               "here", "knitr", "tinytex", "rmarkdown", "xfun", "pandoc",
-              "wbstats", "Rilostat", "sandwich", "dplyr")
+              "wbstats", "Rilostat", "sandwich", "dplyr", "urca", "lmtest")
 new_packages <- packages[!(packages %in% installed.packages()[, "Package"])]
 if (length(new_packages)) install.packages(new_packages, repos="https://cran.mirror.garr.it/CRAN/")
 invisible(lapply(packages, library, character.only = TRUE))
@@ -31,9 +31,9 @@ invisible(lapply(packages, library, character.only = TRUE))
 # setwd(here::here())
 ```
 
-## DATA COLLECTION
+# DATA COLLECTION
 
-# Real GDP Data
+## Real GDP Data
 
 \par In this first part, we download nominal GDP data and GDP deflator data from 1980 
 to 2020 and then we divide it into the 2 section (1980s and 2010s) in order to calculate
@@ -127,14 +127,16 @@ plot(realgdp1$date, realgdp1$value, type="h")
 plot(realgdp2$date, realgdp2$value, type="h")
 ```
 
-# Labor Share
+## Labor Share of Output
+
+### "Naive" Labor Share
 
 First attmpt here is to download the laborshare timeseries from fred.
 Howevere, this approach neglects some important aspects, such as the role
 of self-employed workers and correction to value added in the forms of 
 indirect taxes and consumption of fixed capital.
 
-```{r}
+```{r p2.0}
 labshare = fredr(
   series_id = "LABSHPUSA156NRUG",
   observation_start = as.Date("1981-01-01"),
@@ -166,8 +168,9 @@ labshare2 = data.frame(labshare2)
 
 ```
 
-This is precisely why I tried to replicate the laborshare measure provided by
-Guerriero (2019), defined as:
+### Guerriero Index
+
+This is precisely why I tried to replicate the laborshare measure provided by {@guerriero2019}, defined as:
 
 $$LS6 = \frac{compensation\;of\;employees * 
 \left(\frac{workforce-employers}{employees}\right)}
@@ -175,7 +178,7 @@ $$LS6 = \frac{compensation\;of\;employees *
 
 
 
-```{r p2, message=FALSE}
+```{r p2.1, message=FALSE, echo=FALSE}
 #API key for bls is: 7b39505b098044f886d056883d2bd925
 #library(blsAPI)
 
@@ -295,7 +298,19 @@ toc=get_ilostat_toc()
 
 mergemp$emplrs = mergemp$aggslf - mergemp$icse93_3 - mergemp$icse93_5
 
+```
 
+For laac of available data on the structure of the labor force in the US
+prior to the introduction of the ICSE93 standard, we will use LS5 instead of
+the LS6 index, defined as:
+
+$$LS6 = \frac{compensation\;of\;employees * 
+\left(\frac{workforce}{employees}\right)}
+{value\;added-ind.\;taxes-fixed\;cap.\;cons.}$$
+
+
+
+```{r p2.12, message=FALSE}
 # For lack of available data, we will use  LS5 and not LS6
 #Now, calculate the multiplier of the compensation for every year
 mergemp$mult = mergemp$labforce/mergemp$emplee
@@ -318,28 +333,28 @@ un = un[order(un$time), ]
 
 
 findconversion = function(s1,s2){
-    model <- lm(s1 ~ lag(s1, n=1L))
+    lag_s1 <- lag(s1, n=1)
+    model <- lm(s1 ~ lag_s1)
     # Check coefficient of lagged variable
-    lag_coeff <- coef(model)["lag_ts1"]
-    # Check if first lag residuals are zero
-    if (lag_coeff == 0) {
-        cat("The first-lag residuals of ts1 are zero.\n")
-    } else {
-        cat("The first-lag residuals of ts1 are not zero.\n")
-    }
-    model <- lm(s2 ~ lag(s2, n=1L))
+    resid <- residuals(model)
+    # Perform the Augmented Dickey-Fuller (ADF) test on residuals
+    adf_test <- ur.df(resid, type = "drift")
+    # Print the test results
+    print(summary(adf_test))
+    lag_s2 <- lag(s2, n=1)
+    stargazer(model, type="text")
+    model <- lm(s2 ~ lag_s2)
     # Check coefficient of lagged variable
-    lag_coeff <- coef(model)["lag_ts2"]
-    # Check if first lag residuals are zero
-    if (lag_coeff == 0) {
-        cat("The first-lag residuals of ts1 are zero.\n")
-    } else {
-        cat("The first-lag residuals of ts1 are not zero.\n")
-    }
-    s1=s1-lag(s1, n=1L)
-    s2=s2-lag(s2, n=1L)
+    resid <- residuals(model)
+    # Perform the Augmented Dickey-Fuller (ADF) test on residuals
+    adf_test <- ur.df(resid, type = "drift")
+    # Print the test results
+    print(summary(adf_test))
+    stargazer(model, type="text")
+    s1=s1-lag(s1, n=1)
+    s2=s2-lag(s2, n=1)
     train = lm(s1 ~ s2)
-    stargazer(train, type = "text", robust = TRUE)
+    stargazer(train, type = "text")
     coef = train$coefficients
     return(coef)
 }
@@ -373,7 +388,21 @@ for(i in 1:length(codelist)){
 
 names(ts) = codenames
 
+ts$mult=mergemp$mult
 
+ts$labshare=(ts$wages)/(ts$gdp-ts$ind_tax-ts$fcc)
+
+plot(ts$labshare)
+```
+
+
+
+### Labor Share from Autor er al.
+
+Another attempt at constructing a measure of the labor share of output comes 
+from Autor er al.(@autor2020)
+
+```{r p2.2}
 ##########################################
 ############ SECOND METHOD ###############
 ##########################################
@@ -385,3 +414,5 @@ names(ts) = codenames
 
 ```
 
+
+# References
