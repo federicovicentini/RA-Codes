@@ -170,7 +170,8 @@ labshare2 = data.frame(labshare2)
 
 ### Guerriero Index
 
-This is precisely why I tried to replicate the laborshare measure provided by {@guerriero2019}, defined as:
+This is precisely why I tried to replicate the laborshare measure provided by 
+{@guerriero2019}, defined as:
 
 $$LS6 = \frac{compensation\;of\;employees * 
 \left(\frac{workforce-employers}{employees}\right)}
@@ -317,7 +318,7 @@ mergemp$mult = mergemp$labforce/mergemp$emplee
 
 
 #Now retrieve data from the un on aggregates
-un = read.csv("un-nsa-aggregates.txt", sep=";")
+un = read.csv("un-sna-aggregates.txt", sep=";")
 names(un)[6]="time"
 un = un[order(un$time), ]
 
@@ -363,7 +364,7 @@ findconversion = function(s1,s2){
 # then compensation and lastly indirect taxes
 
 
-codelist = c("K.1", "B.1g", "D.1", "D.2-D.3")
+codelist = c("K.1", "B.1*g", "D.1", "D.2-D.3")
 
 codenames = c("time","fcc", "gdp", "wages", "ind_tax")
 
@@ -381,18 +382,34 @@ for(i in 1:length(codelist)){
                       un$Series == 1000 & un$time >= 1995)
   coef = findconversion(ts08$Value, ts93$Value)
   simts08 = tsold$Value * coef[2] + coef[1]
+  #simts08=tsold$Value
   addts=c(simts08, tsnew$Value)
   ts[,i+1]=addts
   plot(ts[,1], addts, type = "o")
 }
 
-names(ts) = codenames
+tsb=data.frame(seq(1980,2020,1))
 
-ts$mult=mergemp$mult
+
+for(i in 1:length(codelist)){
+  tsnew = subset(un, un$SNA93.Item.Code == codelist[i] &
+                      un$Series == 1000 & un$time >= 1995)
+  tsold = subset(un, un$SNA93.Item.Code == codelist[i] &
+                      un$Series == 100 & un$time < 1995)
+  addts=c(tsold$Value, tsnew$Value)
+  tsb[,i+1]=addts
+}
+
+
+names(ts) = codenames
+names(tsb) = codenames
+
+#ts$mult=mergemp$mult
 
 ts$labshare=(ts$wages)/(ts$gdp-ts$ind_tax-ts$fcc)
-
-plot(ts$labshare)
+tsb$labshare=(tsb$wages)/(tsb$gdp-tsb$ind_tax-tsb$fcc)
+plot(ts$time, ts$labshare)
+plot(tsb$time, tsb$labshare)
 ```
 
 
