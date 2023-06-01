@@ -129,12 +129,13 @@ plot(realgdp2$date, realgdp2$value, type="h")
 
 ## Labor Share of Output
 
-### "Naive" Labor Share
+### "Naive" Labor Share (LS1)
 
-First attmpt here is to download the laborshare timeseries from fred.
-Howevere, this approach neglects some important aspects, such as the role
-of self-employed workers and correction to value added in the forms of 
-indirect taxes and consumption of fixed capital.
+First attempt here is to download the laborshare timeseries from fred.
+You can see from the values of the plots that the level of the labor share is 
+underestimated if we use LS1. In fact, this approach neglects some important 
+aspects, such as the role of self-employed workers and correction to value added 
+in the forms of indirect taxes and consumption of fixed capital.
 
 ```{r p2.0}
 labshare = fredr(
@@ -165,12 +166,16 @@ labshare1 = data.frame(labshare1)
 
 labshare2 = data.frame(labshare2)
 
+plot(labshare1$date,labshare1$value)
+plot(labshare2$date,labshare2$value)
 
 ```
 
+
+
 ### Guerriero Index
 
-This is precisely why I tried to replicate the laborshare measure provided by 
+This is precisely why we tried to replicate the laborshare measure provided by 
 {@guerriero2019}, defined as:
 
 $$LS6 = \frac{compensation\;of\;employees * 
@@ -178,15 +183,17 @@ $$LS6 = \frac{compensation\;of\;employees *
 {value\;added-ind.\;taxes-fixed\;cap.\;cons.}$$
 
 
+Data is retrieved from Ilostat R package API and (@dataunorg)
+
 
 ```{r p2.1, message=FALSE, echo=FALSE}
 #API key for bls is: 7b39505b098044f886d056883d2bd925
 #library(blsAPI)
 
-s=wb_search("compensation of employees")
+#s=wb_search("compensation of employees")
 comp=wb_data(country="US","GC.XPN.COMP.CN")
 
-s=fredr_series_search_text("compensation")
+#s=fredr_series_search_text("compensation")
 #View(s)
 
 labforce1=read.csv("civilianlaborforce.csv", sep=",")
@@ -216,58 +223,54 @@ toc=get_ilostat_toc()
 # Assume your dataframe is called "my_df" and your time column is called "time"
 # Sort the dataframe in ascending order of time
 labforce <- labforce %>% arrange(labforce$time)
-plot(labforce1$Value-labforce$obs_value)
+#plot(labforce1$Value-labforce$obs_value)
 
 #Download and filter the dataset with all employed by status
-empl=get_ilostat("EMP_TEMP_SEX_AGE_STE_NB_A")
-empl=subset(empl, empl$indicator=="EMP_TEMP_SEX_AGE_STE_NB"&
-                  empl$ref_area=="USA"&
-                  empl$classif1=="AGE_AGGREGATE_TOTAL"&
-                  empl$classif2 == "STE_AGGREGATE_TOTAL"&
-                  empl$sex=="SEX_T"&
-                  empl$time>=1980)
+database=get_ilostat("EMP_TEMP_SEX_AGE_STE_NB_A")
 
-#To get only employees, filter for STE_ICSE93_1
-emplee=get_ilostat("EMP_TEMP_SEX_AGE_STE_NB_A")
-emplee=subset(emplee, emplee$indicator=="EMP_TEMP_SEX_AGE_STE_NB"&
-                      emplee$ref_area=="USA"&
-                      emplee$classif1=="AGE_AGGREGATE_TOTAL"&
-                      emplee$classif2 == "STE_ICSE93_1"&
-                      emplee$sex=="SEX_T"&
-                      emplee$time>=1980)
+
+empl=subset(database, database$indicator=="EMP_TEMP_SEX_AGE_STE_NB"&
+                  database$ref_area=="USA"&
+                  database$classif1=="AGE_AGGREGATE_TOTAL"&
+                  database$classif2 == "STE_AGGREGATE_TOTAL"&
+                  database$sex=="SEX_T"&
+                  database$time>=1980)
+
+#To get only databaseoyees, filter for STE_ICSE93_1
+emplee=subset(database, database$indicator=="EMP_TEMP_SEX_AGE_STE_NB"&
+                      database$ref_area=="USA"&
+                      database$classif1=="AGE_AGGREGATE_TOTAL"&
+                      database$classif2 == "STE_ICSE93_1"&
+                      database$sex=="SEX_T"&
+                      database$time>=1980)
 
 #Filter for STE_ICSE93_3
-icse93_3=get_ilostat("EMP_TEMP_SEX_AGE_STE_NB_A")
-icse93_3=subset(icse93_3, icse93_3$indicator=="EMP_TEMP_SEX_AGE_STE_NB"&
-                      icse93_3$ref_area=="USA"&
-                      icse93_3$classif1=="AGE_AGGREGATE_TOTAL"&
-                      icse93_3$classif2 == "STE_ICSE93_3"&
-                      icse93_3$sex=="SEX_T"&
-                      icse93_3$time>=1980)
+icse93_3=subset(database, database$indicator=="EMP_TEMP_SEX_AGE_STE_NB"&
+                      database$ref_area=="USA"&
+                      database$classif1=="AGE_AGGREGATE_TOTAL"&
+                      database$classif2 == "STE_ICSE93_3"&
+                      database$sex=="SEX_T"&
+                      database$time>=1980)
 
 #Filter for STE_ICSE93_5
-icse93_5=get_ilostat("EMP_TEMP_SEX_AGE_STE_NB_A")
-icse93_5=subset(icse93_5, icse93_5$indicator=="EMP_TEMP_SEX_AGE_STE_NB"&
-                      icse93_5$ref_area=="USA"&
-                      icse93_5$classif1=="AGE_AGGREGATE_TOTAL"&
-                      icse93_5$classif2 == "STE_ICSE93_5"&
-                      icse93_5$sex=="SEX_T"&
-                      icse93_5$time>=1980)
+icse93_5=subset(database, database$indicator=="EMP_TEMP_SEX_AGE_STE_NB"&
+                      database$ref_area=="USA"&
+                      database$classif1=="AGE_AGGREGATE_TOTAL"&
+                      database$classif2 == "STE_ICSE93_5"&
+                      database$sex=="SEX_T"&
+                      database$time>=1980)
 
 #Filter for STE_AGGREGATE_SLF
-aggslf=get_ilostat("EMP_TEMP_SEX_AGE_STE_NB_A")
-aggslf=subset(aggslf, aggslf$indicator=="EMP_TEMP_SEX_AGE_STE_NB"&
-                      aggslf$ref_area=="USA"&
-                      aggslf$classif1=="AGE_AGGREGATE_TOTAL"&
-                      aggslf$classif2 == "STE_AGGREGATE_SLF"&
-                      aggslf$sex=="SEX_T"&
-                      aggslf$time>=1980)
+aggslf=subset(database, database$indicator=="EMP_TEMP_SEX_AGE_STE_NB"&
+                      database$ref_area=="USA"&
+                      database$classif1=="AGE_AGGREGATE_TOTAL"&
+                      database$classif2 == "STE_AGGREGATE_SLF"&
+                      database$sex=="SEX_T"&
+                      database$time>=1980)
 
-#Merge the dataframes
-# merged_df <- merge(df1, df2["Date", "Value", drop = FALSE], by = "Date", all = TRUE)
 
-empl = select(empl, time, obs_value)
-names(empl)[2]="empl"
+#empl = select(empl, time, obs_value)
+#names(empl)[2]="empl"
 
 emplee = select(emplee, time, obs_value)
 names(emplee)[2]="emplee"
@@ -297,11 +300,15 @@ toc=get_ilostat_toc()
 # this is under the assumption that icse93_4 is negligible
 # in fact is around 8k workers for the US economy as a whole
 
-mergemp$emplrs = mergemp$aggslf - mergemp$icse93_3 - mergemp$icse93_5
+#mergemp$emplrs = mergemp$aggslf - mergemp$icse93_3 - mergemp$icse93_5
+
+# This is not a feasible way to do it, let's stick to LS5 indicator
+# instead of LS6
+
 
 ```
 
-For laac of available data on the structure of the labor force in the US
+For lack of available data on the structure of the labor force in the US
 prior to the introduction of the ICSE93 standard, we will use LS5 instead of
 the LS6 index, defined as:
 
@@ -309,13 +316,53 @@ $$LS6 = \frac{compensation\;of\;employees *
 \left(\frac{workforce}{employees}\right)}
 {value\;added-ind.\;taxes-fixed\;cap.\;cons.}$$
 
+Below you can find also an example of the result we would get by trying to 
+compute LS6 too.
 
+Note: since (@guerriero2019) says that "Data on the composition of the workforce is not 
+always available for every year. When absent, it is assumed to be the same as in the 
+previous year (Gollin 2002). This is a realistic assumption (Askenazy 2003), given 
+that the composition of the workforce is relatively constant over time.", and since we
+have data on the composition of the workforce from 1994 onward, we will assume that 
+in years preceding 1994, workforce composition is the same. Below, you can find a plot
+of workforce/employees for 1994 onward, where you can see that the figure is pretty stable.
+However, instead of taking 1994 value and projecting backward, I found it better to 
+make an average for the period 1994-2000 and then project that figure backward.
+
+Note2: since there are 2 different time series for SNA data, coming from two different
+accounting standards (SNA93 and SNA08), we tried 2 approaches. First, we tried to find
+a conversion factor between those 2 standards (using first lags in order not to have 
+spurious regressions), but this approach leads to a big jump in the data around the
+cutoff year. Thus, the second method was just to keep the newer standard for years after
+1995, and the old one for years prior. This is probably what @guerriero2019 did in the paper,
+since the results look similar (albeit different since we use LS5 and not LS6). This
+is the method I selected in the end.
 
 ```{r p2.12, message=FALSE}
 # For lack of available data, we will use  LS5 and not LS6
 #Now, calculate the multiplier of the compensation for every year
-mergemp$mult = mergemp$labforce/mergemp$emplee
 
+mergemp=mergemp[-c(28:29),]
+
+mergemp$mult = (mergemp$labforce)/mergemp$emplee
+mergemp$mult6 = (mergemp$labforce-mergemp$icse93_3)/mergemp$emplee
+
+plot(mergemp$time,mergemp$mult,
+  main = "Total Workforce / Number of Employees")
+
+# Now, add the other years by:
+
+multtrain=mergemp$mult[c(1:7)]
+simmult=mean(multtrain)
+simmult=rep(simmult, 14)
+mult=append(simmult, mergemp$mult)
+
+mult6train=mergemp$mult6[c(1:7)]
+simmult6=mean(mult6train)
+simmult6=rep(simmult6, 14)
+mult6=append(simmult6, mergemp$mult6)
+
+#plot(mult)
 
 #Now retrieve data from the un on aggregates
 un = read.csv("un-sna-aggregates.txt", sep=";")
@@ -341,21 +388,21 @@ findconversion = function(s1,s2){
     # Perform the Augmented Dickey-Fuller (ADF) test on residuals
     adf_test <- ur.df(resid, type = "drift")
     # Print the test results
-    print(summary(adf_test))
+    #print(summary(adf_test))
     lag_s2 <- lag(s2, n=1)
-    stargazer(model, type="text")
+    #stargazer(model, type="text")
     model <- lm(s2 ~ lag_s2)
     # Check coefficient of lagged variable
     resid <- residuals(model)
     # Perform the Augmented Dickey-Fuller (ADF) test on residuals
     adf_test <- ur.df(resid, type = "drift")
     # Print the test results
-    print(summary(adf_test))
-    stargazer(model, type="text")
+    #print(summary(adf_test))
+    #stargazer(model, type="text")
     s1=s1-lag(s1, n=1)
     s2=s2-lag(s2, n=1)
     train = lm(s1 ~ s2)
-    stargazer(train, type = "text")
+    #stargazer(train, type = "text")
     coef = train$coefficients
     return(coef)
 }
@@ -382,10 +429,9 @@ for(i in 1:length(codelist)){
                       un$Series == 1000 & un$time >= 1995)
   coef = findconversion(ts08$Value, ts93$Value)
   simts08 = tsold$Value * coef[2] + coef[1]
-  #simts08=tsold$Value
   addts=c(simts08, tsnew$Value)
   ts[,i+1]=addts
-  plot(ts[,1], addts, type = "o")
+  #plot(ts[,1], addts, type = "o")
 }
 
 tsb=data.frame(seq(1980,2020,1))
@@ -404,12 +450,42 @@ for(i in 1:length(codelist)){
 names(ts) = codenames
 names(tsb) = codenames
 
-#ts$mult=mergemp$mult
+ts$mult=mult
+tsb$mult=mult
+tsb$mult6=mult6
 
-ts$labshare=(ts$wages)/(ts$gdp-ts$ind_tax-ts$fcc)
-tsb$labshare=(tsb$wages)/(tsb$gdp-tsb$ind_tax-tsb$fcc)
-plot(ts$time, ts$labshare)
-plot(tsb$time, tsb$labshare)
+ts$labshare=(ts$wages*ts$mult)/(ts$gdp-ts$ind_tax-ts$fcc)
+tsb$labshare=(tsb$wages*tsb$mult)/(tsb$gdp-tsb$ind_tax-tsb$fcc)
+tsb$labshare6=(tsb$wages*tsb$mult6)/(tsb$gdp-tsb$ind_tax-tsb$fcc)
+#plot(ts$time, ts$labshare)
+plot(tsb$time, tsb$labshare, main="Labor Share of Output (LS5)")
+plot(tsb$time, tsb$labshare6, main="Labor Share of Output (LS6)")
+
+period1=tsb[c(2:11),]
+labshmean1=mean(period1$labshare)
+labshmean1*100
+
+labsh6mean1=mean(period1$labshare6)
+labsh6mean1*100
+
+period2=tsb[c(32:40),]
+labshmean2=mean(period2$labshare)
+labshmean2*100
+
+labsh6mean2=mean(period2$labshare6)
+labsh6mean2*100
+
+labsh11=mean(tsb$labshare[c(32)])
+labsh11
+
+labsh611=mean(tsb$labshare6[c(32)])
+labsh611
+
+
+(labshmean2-labshmean1)*100
+
+(labsh6mean2-labsh6mean1)*100
+
 ```
 
 
@@ -420,15 +496,7 @@ Another attempt at constructing a measure of the labor share of output comes
 from Autor er al.(@autor2020)
 
 ```{r p2.2}
-##########################################
-############ SECOND METHOD ###############
-##########################################
-
-# Per il secondo metodo:
-# ricontrolla il paper di Autor sulla fall of labor share
-# and rise of superstar firms
-
-
+# IF GUERRIERO IS GOOD, DROP THIS PART
 ```
 
 
