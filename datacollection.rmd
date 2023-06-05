@@ -122,9 +122,9 @@ mean(realgdp2$value)
 ```
 
 ```{r p1.1, message=FALSE}
-plot(realgdp$date, realgdp$value, type="h")
-plot(realgdp1$date, realgdp1$value, type="h")
-plot(realgdp2$date, realgdp2$value, type="h")
+plot(realgdp$date, realgdp$value, type="l")
+plot(realgdp1$date, realgdp1$value, type="l")
+plot(realgdp2$date, realgdp2$value, type="l")
 ```
 
 ## Labor Share of Output
@@ -166,8 +166,10 @@ labshare1 = data.frame(labshare1)
 
 labshare2 = data.frame(labshare2)
 
-plot(labshare1$date,labshare1$value)
-plot(labshare2$date,labshare2$value)
+
+plot(labshare$date, labshare$value, type="l")
+plot(labshare1$date,labshare1$value, type="l")
+plot(labshare2$date,labshare2$value, type= "l")
 
 ```
 
@@ -348,7 +350,8 @@ mergemp$mult = (mergemp$labforce)/mergemp$emplee
 mergemp$mult6 = (mergemp$labforce-mergemp$icse93_3)/mergemp$emplee
 
 plot(mergemp$time,mergemp$mult,
-  main = "Total Workforce / Number of Employees")
+  main = "Total Workforce / Number of Employees",
+  typ="l")
 
 # Now, add the other years by:
 
@@ -458,8 +461,14 @@ ts$labshare=(ts$wages*ts$mult)/(ts$gdp-ts$ind_tax-ts$fcc)
 tsb$labshare=(tsb$wages*tsb$mult)/(tsb$gdp-tsb$ind_tax-tsb$fcc)
 tsb$labshare6=(tsb$wages*tsb$mult6)/(tsb$gdp-tsb$ind_tax-tsb$fcc)
 #plot(ts$time, ts$labshare)
-plot(tsb$time, tsb$labshare, main="Labor Share of Output (LS5)")
-plot(tsb$time, tsb$labshare6, main="Labor Share of Output (LS6)")
+plot(tsb$time, tsb$labshare, main="Labor Share of Output (LS5)",
+                             type="l",
+                             xlab="Time",
+                             ylab="LS5")
+plot(tsb$time, tsb$labshare6, main="Labor Share of Output (LS6)",
+                              type="l",
+                              xlab="Time",
+                              ylab="LS6")
 
 period1=tsb[c(2:11),]
 labshmean1=mean(period1$labshare)
@@ -490,14 +499,10 @@ labsh611
 
 
 
-### Labor Share from Autor er al.
+## Market Concentration
 
-Another attempt at constructing a measure of the labor share of output comes 
-from Autor er al.(@autor2020)
 
-```{r p2.2}
-# IF GUERRIERO IS GOOD, DROP THIS PART
-```
+
 
 
 # References
