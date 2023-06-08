@@ -501,6 +501,14 @@ labsh611
 
 ## Market Concentration
 
+Market concentration is computed according to
+
+```{r mk,  message=FALSE}
+mkts=read.csv("markup.csv", sep=",")
+
+plot(mkts$year,mkts$MARKUP_spec1, type="l", col="blue")
+
+```
 
 
 
