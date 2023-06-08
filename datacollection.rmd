@@ -499,15 +499,28 @@ labsh611
 
 
 
-## Market Concentration
+## Price Markup
 
-Market concentration is computed according to
+Price markup is computed according to @deloecker2020, using the replication
+file related to the paper and extracting the time series of aggregate markup
+presented as the main finding of the paper itself.
 
 ```{r mk,  message=FALSE}
 mkts=read.csv("markup.csv", sep=",")
 
-plot(mkts$year,mkts$MARKUP_spec1, type="l", col="blue")
+mkts = subset(mkts, year %in% c(1980:2016))
 
+mkts80 = subset(mkts,  year %in% c(1981:1990) )
+
+avg80 = mean(mkts80$MARKUP_spec1)
+avg80
+
+mkts10 = subset(mkts,  year %in% c(2011:2016) )
+
+avg10 = mean(mkts10$MARKUP_spec1)
+avg10
+
+plot(mkts$year,mkts$MARKUP_spec1, type="l", col="blue")
 ```
 
 
