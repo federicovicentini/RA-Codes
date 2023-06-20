@@ -53,6 +53,45 @@ drop if sector == "Public Administration"
 
 * CHECK IF MISSING VALUES ARE FROM SAME FIRMS OR ONLY IN SOME YEARS
 
+// Check if observations with missing naics are from the same firms based on gvkey
+duplicates report gvkey if missing(naics)
+
+
+* distribution of missing naics across different gvkeys
+by gvkey: egen naics_missing_count = total(missing(naics))
+tabulate naics_missing_count, gen(freq)
+histogram naics_missing_count  if naics_missing_count > 0, discrete 
+graph export "histmissingnaics.png", as(png) replace
+
+
+* distribution of missing naics/duration across different gvkeys
+by gvkey: egen duration = count(gvkey)
+histogram duration
+graph export "histduration.png", as(png) replace
+histogram duration if naics_missing_count > 0, color(red)
+graph export "histdurationofmissingnaics.png", as(png) replace
+twoway (histogram duration if naics_missing_count > 0,  color(red) ) ///
+       (histogram duration if naics_missing_count == 0, color(blue) )
+graph export "hist_duration_comparison.png", as(png) replace
+
+twoway (histogram sale if naics_missing_count > 0 & sale!=0,  color(red) width(100000)) ///
+       (histogram sale if naics_missing_count == 0 & sale!=0, color(blue) width(100000) )
+graph export "hist_sales_comparison.png", as(png) replace
+
+
+
+
+gen naicsprop = naics_missing_count/duration
+tabulate naicsprop
+histogram naicsprop  if naicsprop > 0 
+graph export "histpropmissingnaics.png", as(png) replace
+
+
+
+
+
+
+
 drop if missing(naics) & missing(naicsh)
 drop if missing(sale)
 
