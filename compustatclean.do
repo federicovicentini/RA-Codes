@@ -74,8 +74,8 @@ twoway (histogram duration if naics_missing_count > 0,  color(red) ) ///
        (histogram duration if naics_missing_count == 0, color(blue) )
 graph export "hist_duration_comparison.png", as(png) replace
 
-twoway (histogram sale if naics_missing_count > 0 & sale!=0,  color(red) width(100000)) ///
-       (histogram sale if naics_missing_count == 0 & sale!=0, color(blue) width(100000) )
+twoway (histogram sale if naics_missing_count > 0 & sale!=0,  color(red) width(1000)) ///
+       (histogram sale if naics_missing_count == 0 & sale!=0, color(blue) width(1000) )
 graph export "hist_sales_comparison.png", as(png) replace
 
 
