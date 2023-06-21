@@ -97,11 +97,19 @@ drop if missing(sale)
 
 *egen naics3 = group(substr(naics, 1, 3))
 
+gen naics1 = substr(naics, 1, 1)
+drop if length(naics1) < 1
+
+
+gen naics2 = substr(naics, 1, 2)
+drop if length(naics2) < 2
+
 gen naics3 = substr(naics, 1, 3)
 drop if length(naics3) < 3
 
+gen naics4 = substr(naics, 1, 4)
 
-
+keep gvkey datadate fyear conm sale naics sector duration naics1 naics2 naics3 naics4
 
 
 
