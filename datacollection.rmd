@@ -542,14 +542,16 @@ compustat <- compustat %>%
   mutate(sectorweight = sector_sales/total_sales)%>%
   mutate(rank = dense_rank(desc(sale))) %>%
   mutate(population = n()) %>%
-  mutate(cr4 = sum(ifelse(rank<=4, sale, 0))/sector_sales)
+  mutate(cr4 = sum(ifelse(rank<=4, sale, 0))/sector_sales) %>%
+  mutate(cr20 = sum(ifelse(rank<=20, sale, 0))/sector_sales)
   
   
-aggcr4 <- compustat %>%
+aggcr <- compustat %>%
   group_by(fyear, naics3) %>%
-  summarize(cr4 = cr4, naics1=naics1, naics2 = naics2, sectorweight = sectorweight, sector = sector) %>%
+  summarize(cr4 = cr4,cr20=cr20, naics1=naics1, naics2 = naics2, sectorweight = sectorweight, sector = sector) %>%
   group_by(fyear, naics2) %>%
-  summarize(cr4 = weighted.mean(cr4, sectorweight), sector = sector)
+  summarize(cr4 = weighted.mean(cr4, sectorweight), sector = sector, 
+            cr20 = weighted.mean(cr20, sectorweight))
 
 
 
@@ -557,13 +559,20 @@ attach(compustat)
 
 library(ggplot2)
 
-ggplot(aggcr4, aes(x = fyear, y = cr4, color = naics2)) +
+ggplot(aggcr, aes(x = fyear, y = cr4, color = naics2)) +
   geom_line() +
   facet_wrap(~ naics2, scales = "free_y") +
   labs(x = "Year", y = "CR4", title = "Time Series of CR4 by Sector") +
   theme_minimal() +
   guides(color = "none")
 
+
+ggplot(aggcr, aes(x = fyear, y = cr20, color = naics2)) +
+  geom_line() +
+  facet_wrap(~ naics2, scales = "free_y") +
+  labs(x = "Year", y = "CR4", title = "Time Series of CR20 by Sector") +
+  theme_minimal() +
+  guides(color = "none")
 ```
 
 
