@@ -528,78 +528,41 @@ plot(mkts$year,mkts$MARKUP_spec1, type="l", col="blue")
 
 ```{r mktconc, message=FALSE}
 compustat <- data.frame(read_dta("leancompustat.dta"))
+compustat <- filter(compustat, fyear>=1980 & fyear<=2019)
 compustat$sector=as.factor(compustat$sector)
 compustat$naics3=as.factor(compustat$naics3)
 library(dplyr)
 
 # Step 1: Calculate sector sales
-df_sector_sales <- compustat %>%
-  group_by(fyear, naics3) %>%
-  summarize(sector_sales = sum(sale))
-
-# Step 2: Calculate total sales within each year and sector
-df_total_sales <- df_sector_sales %>%
+compustat <- compustat %>%
   group_by(fyear) %>%
-  mutate(total_sales = sum(sector_sales))
-
-# Step 3: Rank within each sector
-df_ranked <- df_total_sales %>%
-  group_by(fyear) %>%
-  mutate(rank = dense_rank(desc(sector_sales)))
-
-# Step 4: Filter top 4 ranks within each sector
-df_top4 <- df_ranked %>%
-  filter(rank <= 4)
-
-# Step 5: Calculate CR4 within each year and sector
-df_cr4 <- df_top4 %>%
+  mutate(total_sales = sum(sale))%>%
+  group_by(fyear, naics4) %>%
+  mutate(sector_sales = sum(sale)) %>%
+  mutate(sectorweight = sector_sales/total_sales)%>%
+  mutate(rank = dense_rank(desc(sale))) %>%
+  mutate(population = n()) %>%
+  mutate(cr4 = sum(ifelse(rank<=4, sale, 0))/sector_sales)
+  
+  
+aggcr4 <- compustat %>%
   group_by(fyear, naics3) %>%
-  summarize(cr4 = sum(sector_sales) / first(total_sales))
-
-# Step 6: Merge with original dataframe
-df_cr4_merged <- left_join(compustat, df_cr4, by = c("fyear", "naics3"))
-
-
-
-df_cr4agg <- df_cr4 %>%
-  mutate(naics2 = substr(naics3, 1, 2)) %>%
+  summarize(cr4 = cr4, naics1=naics1, naics2 = naics2, sectorweight = sectorweight, sector = sector) %>%
   group_by(fyear, naics2) %>%
-  summarize(avg_cr4 = mean(cr4))
-
-df_cr20 <- compustat %>%
-  group_by(fyear, naics3) %>%
-  summarize(total_sales = sum(sale)) %>%
-  group_by(fyear) %>%
-  mutate(sector_sales = sum(total_sales)) %>%
-  group_by(fyear, naics3) %>%
-  arrange(desc(total_sales)) %>%
-  mutate(rank = row_number()) %>%
-  filter(rank <= 20) %>%
-  group_by(fyear, naics3) %>%
-  summarize(cr20 = sum(total_sales) / first(sector_sales))
-
-df_cr20agg <- df_cr20 %>%
-  mutate(naics2 = substr(naics3, 1, 2)) %>%
-  group_by(fyear, naics2) %>%
-  summarize(avg_cr20 = mean(cr20))
+  summarize(cr4 = weighted.mean(cr4, sectorweight), sector = sector)
 
 
+
+attach(compustat)
 
 library(ggplot2)
 
-ggplot(df_cr4agg, aes(x = fyear, y = avg_cr4, color = naics2)) +
+ggplot(aggcr4, aes(x = fyear, y = cr4, color = naics2)) +
   geom_line() +
-  facet_wrap(~ naics2, nrow = 3, scales = "free_y") +
+  facet_wrap(~ naics2, scales = "free_y") +
   labs(x = "Year", y = "CR4", title = "Time Series of CR4 by Sector") +
-  theme_minimal()
-
-ggplot(df_cr20agg, aes(x = fyear, y = avg_cr20, color = naics2)) +
-  geom_line() +
-  facet_wrap(~ naics2, nrow = 3, scales = "free_y") +
-  labs(x = "Year", y = "CR4", title = "Time Series of CR20 by Sector") +
-  theme_minimal()
-
-
+  theme_minimal() +
+  guides(color = "none")
 
 ```
 
