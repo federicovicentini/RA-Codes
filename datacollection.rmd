@@ -533,22 +533,32 @@ compustat$sector=as.factor(compustat$sector)
 compustat$naics3=as.factor(compustat$naics3)
 library(dplyr)
 
-# Step 1: Calculate sector sales
+# Step 1: Calculate cr4 and cr20 with naics4 sector sales
 compustat <- compustat %>%
   group_by(fyear) %>%
   mutate(total_sales = sum(sale))%>%
   group_by(fyear, naics4) %>%
   mutate(sector_sales = sum(sale)) %>%
-  mutate(sectorweight = sector_sales/total_sales)%>%
-  mutate(rank = dense_rank(desc(sale))) %>%
-  mutate(population = n()) %>%
-  mutate(cr4 = sum(ifelse(rank<=4, sale, 0))/sector_sales) %>%
-  mutate(cr20 = sum(ifelse(rank<=20, sale, 0))/sector_sales)
+  mutate(sectorweight4 = sector_sales/total_sales)%>%
+  mutate(rank4 = dense_rank(desc(sale))) %>%
+  mutate(population4 = n()) %>%
+  mutate(naics4cr4 = sum(ifelse(rank4<=4, sale, 0))/sector_sales) %>%
+  mutate(naics4cr20 = sum(ifelse(rank4<=20, sale, 0))/sector_sales)
+
+# Step 1: Calculate cr4 and cr20 with naics3 sector sales
+compustat <- compustat %>%
+  group_by(fyear, naics3) %>%
+  mutate(sector_sales3 = sum(sale)) %>%
+  mutate(sectorweight3 = sector_sales3/total_sales)%>%
+  mutate(rank3 = dense_rank(desc(sale))) %>%
+  mutate(population3 = n()) %>%
+  mutate(naics3cr4 = sum(ifelse(rank3<=4, sale, 0))/sector_sales3) %>%
+  mutate(naics3cr20 = sum(ifelse(rank3<=20, sale, 0))/sector_sales3)
   
-  
+# Aggregate database with cr4 by naics2 with naics4 aggr
 aggcr <- compustat %>%
   group_by(fyear, naics3) %>%
-  summarize(cr4 = cr4,cr20=cr20, naics1=naics1, naics2 = naics2, sectorweight = sectorweight, sector = sector) %>%
+  summarize(cr4 = cr4,cr20=cr20, naics1=naics1, naics2 = naics2, sectorweight = sectorweight4, sector = sector) %>%
   group_by(fyear, naics2) %>%
   summarize(cr4 = weighted.mean(cr4, sectorweight), sector = sector, 
             cr20 = weighted.mean(cr20, sectorweight))
@@ -573,6 +583,9 @@ ggplot(aggcr, aes(x = fyear, y = cr20, color = naics2)) +
   labs(x = "Year", y = "CR4", title = "Time Series of CR20 by Sector") +
   theme_minimal() +
   guides(color = "none")
+
+# Use the same aggregation scheme as Autor et al. so:
+# all others is sic1 = 8 or 7 or 0 or 4
 ```
 
 
