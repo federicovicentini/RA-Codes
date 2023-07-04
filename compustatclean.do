@@ -4,7 +4,7 @@ cd "C:\Users\feder\OneDrive\Documenti Fede\Scuola\Università\MSc in Economics\R
 
 use compustat.dta
 
-keep gvkey datadate fyear sale naicsh naics at conm
+keep gvkey datadate fyear sale naicsh naics sic at conm emp
 destring gvkey, replace
 
 
@@ -17,7 +17,7 @@ sort gvkey fyear
 sort fyear gvkey
 drop if gvkey[_n-1] == gvkey[_n] & fyear[_n-1] == fyear[_n] & at[_n-1] == at[_n]
 duplicates drop fyear gvkey, force
-* No duiplicates found
+* some duplicates found
 
 xtset gvkey fyear
 
@@ -48,8 +48,6 @@ table sector
 * drop public administration since it has only 1 observation
 
 drop if sector == "Public Administration"
-
-* drop if there is no naics  and no naicsh value, or no sales
 
 * CHECK IF MISSING VALUES ARE FROM SAME FIRMS OR ONLY IN SOME YEARS
 
@@ -109,7 +107,7 @@ drop if length(naics3) < 3
 
 gen naics4 = substr(naics, 1, 4)
 
-keep gvkey datadate fyear conm sale naics sector duration naics1 naics2 naics3 naics4
+keep gvkey datadate fyear conm sale naics sector duration sic emp naics1 naics2 naics3 naics4
 
 
 
