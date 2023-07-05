@@ -583,7 +583,7 @@ attach(compustat)
 
 library(ggplot2)
 
-ggplot(aggcr4, aes(x = fyear, y = cr4sal, color = naics2)) +
+ggplot(aggcr4, aes(x = fyear, color = naics2)) +
   geom_line(aes(y = cr4sal)) +
   geom_line(aes(y = cr4emp), color="black") +
   facet_wrap(~ naics2, scales = "free_y") +
@@ -592,12 +592,14 @@ ggplot(aggcr4, aes(x = fyear, y = cr4sal, color = naics2)) +
   guides(color = "none")
 
 
-ggplot(aggcr, aes(x = fyear, y = cr20, color = naics2)) +
-  geom_line() +
+ggplot(aggcr4, aes(x = fyear, color = naics2)) +
+  geom_line(aes(y = cr20sal)) +
+  geom_line(aes(y = cr20emp), color="black") +
   facet_wrap(~ naics2, scales = "free_y") +
-  labs(x = "Year", y = "CR4", title = "Time Series of CR20 by Sector") +
+  labs(x = "Year", y = "CR20", title = "Time Series of CR20 by Sector") +
   theme_minimal() +
   guides(color = "none")
+
 
 # Use the same aggregation scheme as Autor et al. so:
 # all others is sic1 = 8 or 7 or 0 or 4

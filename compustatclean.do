@@ -91,7 +91,14 @@ graph export "histpropmissingnaics.png", as(png) replace
 
 
 drop if missing(naics) & missing(naicsh)
-drop if missing(sale)
+
+
+
+
+// drop if missing(sale)
+// drop if missing(emp)
+
+
 
 *egen naics3 = group(substr(naics, 1, 3))
 
@@ -106,6 +113,46 @@ gen naics3 = substr(naics, 1, 3)
 drop if length(naics3) < 3
 
 gen naics4 = substr(naics, 1, 4)
+
+// Since emp has lots of missing values and since employment is usually stable year
+// over year, we try to give missing values the same value they had in the previous period
+
+// Generate a new variable "emp_new" and initialize it with the same values as "emp"
+gen emp_new = emp
+
+// Loop over the dataset by gvkey
+by gvkey: replace emp_new = emp_new[_n-1] if missing(emp_new) & !missing(emp_new[_n-1])
+
+by gvkey: replace emp_new = emp_new[_n+1] if missing(emp_new) & !missing(emp_new[_n+1])
+
+replace emp_new = 0 if emp_new==.
+
+// Drop the original "emp" variable
+drop emp
+
+// Rename "emp_new" as "emp"
+rename emp_new emp
+
+// The same but for sales
+
+// Generate a new variable "sale_new" and initialize it with the same values as "sale"
+gen sale_new = sale
+
+// Loop over the dataset by gvkey
+by gvkey: replace sale_new = sale_new[_n-1] if missing(sale_new) & !missing(sale_new[_n-1])
+
+by gvkey: replace sale_new = sale_new[_n+1] if missing(sale_new) & !missing(sale_new[_n+1])
+
+replace sale_new = 0 if sale_new==.
+
+// Drop the original "emp" variable
+drop sale
+
+// Rename "emp_new" as "emp"
+rename sale_new sale
+
+
+
 
 keep gvkey datadate fyear conm sale naics sector duration sic emp naics1 naics2 naics3 naics4
 
