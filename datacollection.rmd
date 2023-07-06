@@ -578,32 +578,85 @@ n4aggcr <- compustat %>%
             cr4emp = weighted.mean(cr4emp, sectorweightemp),
             cr20emp = weighted.mean(cr20emp, sectorweightemp))
 
+n3aggcr <- compustat %>%
+  group_by(fyear, naics3) %>%
+  summarize(cr4sal = n3cr4sal,cr20sal=n3cr20sal, cr4emp=n3cr4emp, cr20emp=n3cr20emp,
+            naics1=naics1, naics2 = naics2, sectorweight = sectorweight3, 
+            sectorweightemp=sectorweight3emp, sector = sector) %>%
+  group_by(fyear, naics2) %>%
+  summarize(cr4sal = weighted.mean(cr4sal, sectorweight), sector = sector, 
+            cr20sal = weighted.mean(cr20sal, sectorweight),
+            cr4emp = weighted.mean(cr4emp, sectorweightemp),
+            cr20emp = weighted.mean(cr20emp, sectorweightemp))
+
 
 
 attach(compustat)
 
 library(ggplot2)
 
+#Margin parameter of the legend
+t = -50
+
+# Plot of CR4 with naics4 aggregation
+
 ggplot(n4aggcr, aes(x = fyear, color = naics2)) +
   geom_line(aes(y = cr4sal, linetype = "CR4 Sal")) +
   geom_line(aes(y = cr4emp, linetype = "CR4 Emp")) +
   facet_wrap(~ naics2, scales = "free_y") +
-  labs(x = "Year", y = "CR4", title = "Time Series of CR4 by Sector (aggregation by Naics 4)", linetype = "") +
+  labs( x = "Year", y = "CR4", 
+        title = "Time Series of CR4 by Sector (aggregation by Naics 4)", linetype = "") +
   scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
   theme_minimal() +
-  guides(color = "none")
+  guides(color = "none") +
+  theme(legend.position = "bottom", 
+        legend.justification = "right", 
+        legend.margin = margin(t = t, r = 0, b = 0, l = 0))
 
-
+#Plot of CR20 with naics4 aggregation
 
 ggplot(n4aggcr, aes(x = fyear, color = naics2)) +
   geom_line(aes(y = cr20sal, linetype = "CR20 Sal")) +
   geom_line(aes(y = cr20emp, linetype = "CR20 Emp")) +
   facet_wrap(~ naics2, scales = "free_y") +
-  labs(x = "Year", y = "CR20", title = "Time Series of CR20 by Sector (aggregation by Naics 4)", linetype = "") +
+  labs( x = "Year", y = "CR20", 
+        title = "Time Series of CR20 by Sector (aggregation by Naics 4)", linetype = "") +
   scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
   theme_minimal() +
-  guides(color = "none")
+  guides(color = "none") +
+  theme(legend.position = "bottom", 
+        legend.justification = "right", 
+        legend.margin = margin(t = t, r = 0, b = 0, l = 0))
 
+# Plot of CR4 with naics3 aggregation
+
+ggplot(n3aggcr, aes(x = fyear, color = naics2)) +
+  geom_line(aes(y = cr4sal, linetype = "CR4 Sal")) +
+  geom_line(aes(y = cr4emp, linetype = "CR4 Emp")) +
+  facet_wrap(~ naics2, scales = "free_y") +
+  labs( x = "Year", y = "CR4", 
+        title = "Time Series of CR4 by Sector (aggregation by Naics 3)", linetype = "") +
+  scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
+  theme_minimal() +
+  guides(color = "none") +
+  theme(legend.position = "bottom", 
+        legend.justification = "right", 
+        legend.margin = margin(t = t, r = 0, b = 0, l = 0))
+
+#Plot of CR20 with naics3 aggregation
+
+ggplot(n3aggcr, aes(x = fyear, color = naics2)) +
+  geom_line(aes(y = cr20sal, linetype = "CR20 Sal")) +
+  geom_line(aes(y = cr20emp, linetype = "CR20 Emp")) +
+  facet_wrap(~ naics2, scales = "free_y") +
+  labs( x = "Year", y = "CR20", 
+        title = "Time Series of CR20 by Sector (aggregation by Naics 3)", linetype = "") +
+  scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
+  theme_minimal() +
+  guides(color = "none") +
+  theme(legend.position = "bottom", 
+        legend.justification = "right", 
+        legend.margin = margin(t = t, r = 0, b = 0, l = 0))
 
 # Use the same aggregation scheme as Autor et al. so:
 # all others is sic1 = 8 or 7 or 0 or 4
