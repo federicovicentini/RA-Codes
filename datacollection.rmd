@@ -595,8 +595,8 @@ attach(compustat)
 
 library(ggplot2)
 
-#Margin parameter of the legend
-t = -50
+#Position of the legend
+pos = c(0.85, 0.1)
 
 # Plot of CR4 with naics4 aggregation
 
@@ -609,9 +609,7 @@ ggplot(n4aggcr, aes(x = fyear, color = naics2)) +
   scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
   theme_minimal() +
   guides(color = "none") +
-  theme(legend.position = "bottom", 
-        legend.justification = "right", 
-        legend.margin = margin(t = t, r = 0, b = 0, l = 0))
+  theme(legend.position = pos, legend.box = "horizontal")
 
 #Plot of CR20 with naics4 aggregation
 
@@ -624,9 +622,7 @@ ggplot(n4aggcr, aes(x = fyear, color = naics2)) +
   scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
   theme_minimal() +
   guides(color = "none") +
-  theme(legend.position = "bottom", 
-        legend.justification = "right", 
-        legend.margin = margin(t = t, r = 0, b = 0, l = 0))
+  theme(legend.position = pos, legend.box = "horizontal")
 
 # Plot of CR4 with naics3 aggregation
 
@@ -639,9 +635,7 @@ ggplot(n3aggcr, aes(x = fyear, color = naics2)) +
   scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
   theme_minimal() +
   guides(color = "none") +
-  theme(legend.position = "bottom", 
-        legend.justification = "right", 
-        legend.margin = margin(t = t, r = 0, b = 0, l = 0))
+  theme(legend.position = pos, legend.box = "horizontal")
 
 #Plot of CR20 with naics3 aggregation
 
@@ -654,9 +648,7 @@ ggplot(n3aggcr, aes(x = fyear, color = naics2)) +
   scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
   theme_minimal() +
   guides(color = "none") +
-  theme(legend.position = "bottom", 
-        legend.justification = "right", 
-        legend.margin = margin(t = t, r = 0, b = 0, l = 0))
+  theme(legend.position = pos, legend.box = "horizontal")
 
 # Use the same aggregation scheme as Autor et al. so:
 # all others is sic1 = 8 or 7 or 0 or 4
