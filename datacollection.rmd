@@ -567,15 +567,16 @@ compustat <- compustat %>%
   mutate(n3cr20emp = sum(ifelse(rank3emp<=20, emp, 0))/sector_emp3)
   
 # Aggregate database with cr4 by naics2 with naics4 aggregation and sales
-aggcr4 <- compustat %>%
-  group_by(fyear, naics3) %>%
+n4aggcr <- compustat %>%
+  group_by(fyear, naics4) %>%
   summarize(cr4sal = n4cr4sal,cr20sal=n4cr20sal, cr4emp=n4cr4emp, cr20emp=n4cr20emp,
-            naics1=naics1, naics2 = naics2, sectorweight = sectorweight4, sector = sector) %>%
+            naics1=naics1, naics2 = naics2, sectorweight = sectorweight4, 
+            sectorweightemp=sectorweight4emp, sector = sector) %>%
   group_by(fyear, naics2) %>%
   summarize(cr4sal = weighted.mean(cr4sal, sectorweight), sector = sector, 
             cr20sal = weighted.mean(cr20sal, sectorweight),
-            cr4emp = weighted.mean(cr4emp, sectorweight),
-            cr20emp = weighted.mean(cr20emp, sectorweight))
+            cr4emp = weighted.mean(cr4emp, sectorweightemp),
+            cr20emp = weighted.mean(cr20emp, sectorweightemp))
 
 
 
@@ -583,20 +584,23 @@ attach(compustat)
 
 library(ggplot2)
 
-ggplot(aggcr4, aes(x = fyear, color = naics2)) +
-  geom_line(aes(y = cr4sal)) +
-  geom_line(aes(y = cr4emp), color="black") +
+ggplot(n4aggcr, aes(x = fyear, color = naics2)) +
+  geom_line(aes(y = cr4sal, linetype = "CR4 Sal")) +
+  geom_line(aes(y = cr4emp, linetype = "CR4 Emp")) +
   facet_wrap(~ naics2, scales = "free_y") +
-  labs(x = "Year", y = "CR4", title = "Time Series of CR4 by Sector") +
+  labs(x = "Year", y = "CR4", title = "Time Series of CR4 by Sector (aggregation by Naics 4)", linetype = "") +
+  scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
   theme_minimal() +
   guides(color = "none")
 
 
-ggplot(aggcr4, aes(x = fyear, color = naics2)) +
-  geom_line(aes(y = cr20sal)) +
-  geom_line(aes(y = cr20emp), color="black") +
+
+ggplot(n4aggcr, aes(x = fyear, color = naics2)) +
+  geom_line(aes(y = cr20sal, linetype = "CR20 Sal")) +
+  geom_line(aes(y = cr20emp, linetype = "CR20 Emp")) +
   facet_wrap(~ naics2, scales = "free_y") +
-  labs(x = "Year", y = "CR20", title = "Time Series of CR20 by Sector") +
+  labs(x = "Year", y = "CR20", title = "Time Series of CR20 by Sector (aggregation by Naics 4)", linetype = "") +
+  scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
   theme_minimal() +
   guides(color = "none")
 
