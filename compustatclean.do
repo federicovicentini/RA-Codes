@@ -21,6 +21,11 @@ duplicates drop fyear gvkey, force
 
 xtset gvkey fyear
 
+* Don't include "Delhaize America Inc" in 2001 (or after), because for
+* some reason its market value (mkval2) goes into trillions
+drop if (conm == "DELHAIZE AMERICA INC" & fyear>=2001)
+
+
 gen sector = ""
 replace sector = "Agriculture, Forestry, Fishing and Hunting" if substr(naics, 1, 2) == "11"
 replace sector = "Mining, Quarrying, and Oil and Gas Extraction" if substr(naics, 1, 2) == "21"
