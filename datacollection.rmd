@@ -507,6 +507,9 @@ file related to the paper and extracting the time series of aggregate markup
 presented as the main finding of the paper itself.
 
 ```{r mk,  message=FALSE}
+# try to add the sectoral markups if you find them!!!
+
+
 mkts=read.csv("markup.csv", sep=",")
 
 mkts = subset(mkts, year %in% c(1980:2016))
@@ -533,6 +536,30 @@ compustat$sector=as.factor(compustat$sector)
 compustat$naics3=as.factor(compustat$naics3)
 library(dplyr)
 
+# Use the same aggregation scheme as Autor et al. and trasnfer the mapping into NAICS codes: 
+# what we keep out of analysis are naics:
+# 11 23 56 61 62 71 72 81 and 99, as well as everything but 211 and 213 in 21 and 
+#  everything but 221 in 22 , and same for 517 in 51. they are all non relevant 
+# or semipublic sectors, or constructions and accomodation which are particularly 
+# full of SMEs not covered by Compustat Data
+
+
+# Create a new column "Classification" with initial value as "Other"
+compustat$AutorClass <- "Other"
+
+# Update the "Classification" column based on the conditions
+compustat$AutorClass[compustat$naics2 %in% c(31, 32, 33) & compustat$naics3 != 325] <- "Manufacturing"
+compustat$AutorClass[compustat$naics2 %in% c(48, 49) & compustat$naics3 != 486] <- "Transportation"
+compustat$AutorClass[compustat$naics2 %in% c(44, 45)] <- "Retail"
+compustat$AutorClass[compustat$naics2 %in% c(42)] <- "Wholesale"
+compustat$AutorClass[compustat$naics3 %in% c(211, 213, 486)] <- "Petroleum & Gas"
+compustat$AutorClass[compustat$naics2 %in% c(52)] <- "Finance & Insurance"
+compustat$AutorClass[compustat$naics3 %in% c(221, 517)] <- "TelCo & Utilities"
+compustat$AutorClass[compustat$naics3 == 325] <- "Chemicals"
+compustat$AutorClass[compustat$naics2 %in% c(54)] <- "Business Services"
+
+compustat$AutorClass <- as.factor(compustat$AutorClass)
+
 # Step 1: Calculate cr4, cr20 and HHI with naics4 sector sales and empl
 compustat <- compustat %>%
   group_by(fyear) %>%
@@ -553,7 +580,10 @@ compustat <- compustat %>%
   mutate(n4cr4emp = sum(ifelse(rank4emp<=4, emp, 0))/sector_emp) %>%
   mutate(n4cr20emp = sum(ifelse(rank4emp<=20, emp, 0))/sector_emp) %>%
   mutate(n4hhisal = sum(ratiosal^2)) %>%
-  mutate(n4hhiemp = sum(ratioemp^2))
+  mutate(n4hhiemp = sum(ratioemp^2)) %>%
+  group_by(fyear, AutorClass) %>%
+  mutate(Autorsales = sum(sale)) %>%
+  mutate(Autorweight = Autorsales/total_sales)
 
 # Step 2: Calculate cr4 and cr20 with naics3 sector sales and empl
 compustat <- compustat %>%
@@ -576,33 +606,43 @@ compustat <- compustat %>%
 
   
 # Aggregate database with cr4 by naics2 with naics4 aggregation and sales
+# Normalize the weights within each naics4 and fyear group
 n4aggcr <- compustat %>%
   group_by(fyear, naics4) %>%
-  summarize(cr4sal = n4cr4sal,cr20sal=n4cr20sal, cr4emp=n4cr4emp, cr20emp=n4cr20emp,
-            naics1=naics1, naics2 = naics2, sectorweight = sectorweight4, 
-            sectorweightemp=sectorweight4emp, sector = sector,
-            hhiemp=n4hhiemp, hhisal=n4hhisal) %>%
-  group_by(fyear, naics2) %>%
-  summarize(cr4sal = weighted.mean(cr4sal, sectorweight), sector = sector, 
-            cr20sal = weighted.mean(cr20sal, sectorweight),
-            cr4emp = weighted.mean(cr4emp, sectorweightemp),
-            cr20emp = weighted.mean(cr20emp, sectorweightemp),
-            hhisal = weighted.mean(hhisal, sectorweight),
-            hhiemp = weighted.mean(hhiemp, sectorweightemp))
+  summarize(cr4sal = n4cr4sal, cr20sal = n4cr20sal, cr4emp = n4cr4emp, cr20emp = n4cr20emp,
+            naics1 = naics1, naics2 = naics2, sectorweight = sectorweight4, 
+            sectorweightemp = sectorweight4emp, sector = sector,
+            hhiemp = n4hhiemp, hhisal = n4hhisal, AutorClass = AutorClass) %>%
+  group_by(fyear, AutorClass) %>%
+  mutate(normalweightsal = sectorweight / sum(sectorweight)) %>%
+  mutate(normalweightemp = sectorweightemp / sum(sectorweightemp)) %>%
+  summarize(cr4sal = weighted.mean(cr4sal, normalweightsal),
+            cr20sal = weighted.mean(cr20sal, normalweightsal),
+            cr4emp = weighted.mean(cr4emp, normalweightemp),
+            cr20emp = weighted.mean(cr20emp, normalweightemp),
+            hhisal = weighted.mean(hhisal, normalweightsal),
+            hhiemp = weighted.mean(hhiemp, normalweightemp), 
+            sectorweightsum = sum(normalweightsal), 
+            sectorweightempsum = sum(normalweightemp))
+
 
 n3aggcr <- compustat %>%
   group_by(fyear, naics3) %>%
   summarize(cr4sal = n3cr4sal,cr20sal=n3cr20sal, cr4emp=n3cr4emp, cr20emp=n3cr20emp,
             naics1=naics1, naics2 = naics2, sectorweight = sectorweight3, 
             sectorweightemp=sectorweight3emp, sector = sector, 
-            hhiemp=n3hhiemp, hhisal=n3hhisal) %>%
-  group_by(fyear, naics2) %>%
-  summarize(cr4sal = weighted.mean(cr4sal, sectorweight), sector = sector, 
-            cr20sal = weighted.mean(cr20sal, sectorweight),
-            cr4emp = weighted.mean(cr4emp, sectorweightemp),
-            cr20emp = weighted.mean(cr20emp, sectorweightemp),
-            hhisal = weighted.mean(hhisal, sectorweight),
-            hhiemp = weighted.mean(hhiemp, sectorweightemp))
+            hhiemp=n3hhiemp, hhisal=n3hhisal, AutorClass = AutorClass) %>%
+  group_by(fyear, AutorClass) %>%
+  mutate(normalweightsal = sectorweight / sum(sectorweight)) %>%
+  mutate(normalweightemp = sectorweightemp / sum(sectorweightemp)) %>%
+  summarize(cr4sal = weighted.mean(cr4sal, normalweightsal),
+            cr20sal = weighted.mean(cr20sal, normalweightsal),
+            cr4emp = weighted.mean(cr4emp, normalweightemp),
+            cr20emp = weighted.mean(cr20emp, normalweightemp),
+            hhisal = weighted.mean(hhisal, normalweightsal),
+            hhiemp = weighted.mean(hhiemp, normalweightemp), 
+            sectorweightsum = sum(normalweightsal), 
+            sectorweightempsum = sum(normalweightemp))
 
 
 
@@ -615,10 +655,10 @@ pos = c(0.85, 0.1)
 
 # Plot of CR4 with naics4 aggregation
 
-ggplot(n4aggcr, aes(x = fyear, color = naics2)) +
+ggplot(n4aggcr, aes(x = fyear, color = AutorClass)) +
   geom_line(aes(y = cr4sal, linetype = "CR4 Sal")) +
   geom_line(aes(y = cr4emp, linetype = "CR4 Emp")) +
-  facet_wrap(~ naics2, scales = "free_y") +
+  facet_wrap(~ AutorClass, scales = "free_y") +
   labs( x = "Year", y = "CR4", 
         title = "Time Series of CR4 by Sector (aggregation by Naics 4)", linetype = "") +
   scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
@@ -628,10 +668,10 @@ ggplot(n4aggcr, aes(x = fyear, color = naics2)) +
 
 #Plot of CR20 with naics4 aggregation
 
-ggplot(n4aggcr, aes(x = fyear, color = naics2)) +
+ggplot(n4aggcr, aes(x = fyear, color = AutorClass)) +
   geom_line(aes(y = cr20sal, linetype = "CR20 Sal")) +
   geom_line(aes(y = cr20emp, linetype = "CR20 Emp")) +
-  facet_wrap(~ naics2, scales = "free_y") +
+  facet_wrap(~ AutorClass, scales = "free_y") +
   labs( x = "Year", y = "CR20", 
         title = "Time Series of CR20 by Sector (aggregation by Naics 4)", linetype = "") +
   scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
@@ -642,10 +682,10 @@ ggplot(n4aggcr, aes(x = fyear, color = naics2)) +
 
 #Plot of HHI with naics4 aggregation
 
-ggplot(n4aggcr, aes(x = fyear, color = naics2)) +
+ggplot(n4aggcr, aes(x = fyear, color = AutorClass)) +
   geom_line(aes(y = hhisal, linetype = "HHI Sal")) +
   geom_line(aes(y = hhiemp, linetype = "HHI Emp")) +
-  facet_wrap(~ naics2, scales = "free_y") +
+  facet_wrap(~ AutorClass, scales = "free_y") +
   labs( x = "Year", y = "HHI", 
         title = "Time Series of HHI by Sector (aggregation by Naics 4)", linetype = "") +
   scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
@@ -655,10 +695,10 @@ ggplot(n4aggcr, aes(x = fyear, color = naics2)) +
 
 # Plot of CR4 with naics3 aggregation
 
-ggplot(n3aggcr, aes(x = fyear, color = naics2)) +
+ggplot(n3aggcr, aes(x = fyear, color = AutorClass)) +
   geom_line(aes(y = cr4sal, linetype = "CR4 Sal")) +
   geom_line(aes(y = cr4emp, linetype = "CR4 Emp")) +
-  facet_wrap(~ naics2, scales = "free_y") +
+  facet_wrap(~ AutorClass, scales = "free_y") +
   labs( x = "Year", y = "CR4", 
         title = "Time Series of CR4 by Sector (aggregation by Naics 3)", linetype = "") +
   scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
@@ -668,10 +708,10 @@ ggplot(n3aggcr, aes(x = fyear, color = naics2)) +
 
 #Plot of CR20 with naics3 aggregation
 
-ggplot(n3aggcr, aes(x = fyear, color = naics2)) +
+ggplot(n3aggcr, aes(x = fyear, color = AutorClass)) +
   geom_line(aes(y = cr20sal, linetype = "CR20 Sal")) +
   geom_line(aes(y = cr20emp, linetype = "CR20 Emp")) +
-  facet_wrap(~ naics2, scales = "free_y") +
+  facet_wrap(~ AutorClass, scales = "free_y") +
   labs( x = "Year", y = "CR20", 
         title = "Time Series of CR20 by Sector (aggregation by Naics 3)", linetype = "") +
   scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
@@ -681,10 +721,10 @@ ggplot(n3aggcr, aes(x = fyear, color = naics2)) +
 
 #Plot of HHI with naics3 aggregation
 
-ggplot(n3aggcr, aes(x = fyear, color = naics2)) +
+ggplot(n3aggcr, aes(x = fyear, color = AutorClass)) +
   geom_line(aes(y = hhisal, linetype = "HHI Sal")) +
   geom_line(aes(y = hhiemp, linetype = "HHI Emp")) +
-  facet_wrap(~ naics2, scales = "free_y") +
+  facet_wrap(~ AutorClass, scales = "free_y") +
   labs( x = "Year", y = "HHI", 
         title = "Time Series of HHI by Sector (aggregation by Naics 3)", linetype = "") +
   scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
@@ -692,8 +732,9 @@ ggplot(n3aggcr, aes(x = fyear, color = naics2)) +
   guides(color = "none") +
   theme(legend.position = pos, legend.box = "horizontal")
 
-# Use the same aggregation scheme as Autor et al. so:
-# all others is sic1 = 8 or 7 or 0 or 4
+
+# add concentration at the aggregated level and confront sectoral level
+# between markup and concentration
 ```
 
 
