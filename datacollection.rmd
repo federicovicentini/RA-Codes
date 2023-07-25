@@ -4,6 +4,8 @@ author: "Federico Vicentini"
 date: "01/05/2023"
 output: pdf_document
 bibliography: references.bib
+header-includes:
+  - \usepackage{longtable}
 ---
 
 
@@ -108,15 +110,16 @@ deflator2 = data.frame(deflator2)
 
 realgdp = gdp
 realgdp$value = realgdp$value - deflator$value
-mean(realgdp$value)
+#mean(realgdp$value)
 
 realgdp1 = gdp1
 realgdp1$value = realgdp1$value - deflator1$value
-mean(realgdp1$value)
+mean80s = mean(realgdp1$value)
 
 realgdp2 = gdp2
 realgdp2$value = realgdp2$value - deflator2$value
-mean(realgdp2$value)
+mean10s=mean(realgdp2$value)
+
 
 
 
@@ -737,7 +740,33 @@ ggplot(n3aggcr, aes(x = fyear, color = AutorClass)) +
 # between markup and concentration
 ```
 
+# Finalised Output
 
+```{r output}
+output <- data.frame(
+  Variable = c("GDP growth", "Concentration", "Markup", "Labor share"),
+  `E.1980s` = c(mean80s, 38, 1.2, 75.36),
+  `E.2010s` = c(mean10s, 43.5, 1.61, 70.9),
+  `E.Delta` = c(mean10s-mean80s, 5.5, 0.41, -4.46),
+  `S.1980s` = c(3.97, 7.73, 1.33, 77.96),
+  `S.2010s` = c(2.28, 17.27, 1.47, 74.14),
+  `S.Delta` = c(-1.69, 9.54, 0.15, -3.82)
+)
+
+# Approximate values to 2 significant digits
+output[, -1] <- lapply(output[, -1], signif, digits = 2)
+
+# Create the table and apply styling
+styled_table <- kable(output, format = "latex", caption = "Empirical and Simulated Data") %>%
+  kable_styling(
+    latex_options = c("striped", "hold_position"),
+    font_size = 14,
+    position = "center"
+  )
+
+# Print the table in your R Markdown document
+styled_table
+```
 
 
 
