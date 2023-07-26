@@ -12,6 +12,7 @@ header-includes:
 ```{r setup, include=FALSE}
 library(knitr)
 knitr::opts_chunk$set(echo = FALSE)
+options(warn = -1)
 ```
 
 ```{r p0, message=FALSE, echo=FALSE}
@@ -475,29 +476,24 @@ plot(tsb$time, tsb$labshare6, main="Labor Share of Output (LS6)",
                               ylab="LS6")
 
 period1=tsb[c(2:11),]
-labshmean1=mean(period1$labshare)
-labshmean1*100
+labshmean1=mean(period1$labshare)*100
 
-labsh6mean1=mean(period1$labshare6)
-labsh6mean1*100
+
+labsh6mean1=mean(period1$labshare6)*100
+
 
 period2=tsb[c(32:40),]
-labshmean2=mean(period2$labshare)
-labshmean2*100
+labshmean2=mean(period2$labshare)*100
 
-labsh6mean2=mean(period2$labshare6)
-labsh6mean2*100
+labsh6mean2=mean(period2$labshare6)*100
 
-labsh11=mean(tsb$labshare[c(32)])
-labsh11
+labsh11=mean(tsb$labshare[c(32)])*100
 
-labsh611=mean(tsb$labshare6[c(32)])
-labsh611
+labsh611=mean(tsb$labshare6[c(32)])*100
 
+#(labshmean2-labshmean1)
 
-(labshmean2-labshmean1)*100
-
-(labsh6mean2-labsh6mean1)*100
+#(labsh6mean2-labsh6mean1)
 
 ```
 
@@ -520,19 +516,19 @@ mkts = subset(mkts, year %in% c(1980:2016))
 mkts80 = subset(mkts,  year %in% c(1981:1990) )
 
 avg80 = mean(mkts80$MARKUP_spec1)
-avg80
+#avg80
 
 mkts10 = subset(mkts,  year %in% c(2011:2016) )
 
 avg10 = mean(mkts10$MARKUP_spec1)
-avg10
+#avg10
 
 plot(mkts$year,mkts$MARKUP_spec1, type="l", col="blue")
 ```
 
 # Market Concentration
 
-```{r mktconc, message=FALSE}
+```{r mktconc, message=FALSE, warning=FALSE}
 compustat <- data.frame(read_dta("leancompustat.dta"))
 compustat <- filter(compustat, fyear>=1980 & fyear<=2019)
 compustat$sector=as.factor(compustat$sector)
@@ -745,16 +741,16 @@ ggplot(n3aggcr, aes(x = fyear, color = AutorClass)) +
 ```{r output}
 output <- data.frame(
   Variable = c("GDP growth", "Concentration", "Markup", "Labor share"),
-  `E.1980s` = c(mean80s, 38, 1.2, 75.36),
-  `E.2010s` = c(mean10s, 43.5, 1.61, 70.9),
-  `E.Delta` = c(mean10s-mean80s, 5.5, 0.41, -4.46),
+  `E.1980s` = c(mean80s, 38, avg80, labsh6mean1),
+  `E.2010s` = c(mean10s, 43.5, avg10, labsh6mean2),
+  `E.Delta` = c(mean10s-mean80s, 5.5, avg10-avg80, labsh6mean2-labsh6mean1),
   `S.1980s` = c(3.97, 7.73, 1.33, 77.96),
   `S.2010s` = c(2.28, 17.27, 1.47, 74.14),
   `S.Delta` = c(-1.69, 9.54, 0.15, -3.82)
 )
 
 # Approximate values to 2 significant digits
-output[, -1] <- lapply(output[, -1], signif, digits = 2)
+output <- lapply(output, signif, digits = 3)
 
 # Create the table and apply styling
 styled_table <- kable(output, format = "latex", caption = "Empirical and Simulated Data") %>%
