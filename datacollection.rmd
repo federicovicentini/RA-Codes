@@ -127,9 +127,12 @@ mean10s=mean(realgdp2$value)
 ```
 
 ```{r p1.1, message=FALSE}
-plot(realgdp$date, realgdp$value, type="l")
-plot(realgdp1$date, realgdp1$value, type="l")
-plot(realgdp2$date, realgdp2$value, type="l")
+plot(realgdp$date, realgdp$value, type="l",
+      xlab="Time", ylab= "Real GDP growth")
+plot(realgdp1$date, realgdp1$value, type="l",
+      xlab="Time", ylab= "Real GDP growth")
+plot(realgdp2$date, realgdp2$value, type="l",
+      xlab="Time", ylab= "Real GDP growth")
 ```
 
 ## Labor Share of Output
@@ -172,9 +175,12 @@ labshare1 = data.frame(labshare1)
 labshare2 = data.frame(labshare2)
 
 
-plot(labshare$date, labshare$value, type="l")
-plot(labshare1$date,labshare1$value, type="l")
-plot(labshare2$date,labshare2$value, type= "l")
+plot(labshare$date, labshare$value, type="l",
+      xlab="Time", ylab= "LS1")
+plot(labshare1$date,labshare1$value, type="l",
+      xlab="Time", ylab= "LS1")
+plot(labshare2$date,labshare2$value, type= "l",
+      xlab="Time", ylab= "LS1")
 
 ```
 
@@ -356,7 +362,9 @@ mergemp$mult6 = (mergemp$labforce-mergemp$icse93_3)/mergemp$emplee
 
 plot(mergemp$time,mergemp$mult,
   main = "Total Workforce / Number of Employees",
-  typ="l")
+  typ="l",
+  xlab="Time", 
+  ylab="Multiplier")
 
 # Now, add the other years by:
 
@@ -523,10 +531,46 @@ mkts10 = subset(mkts,  year %in% c(2011:2016) )
 avg10 = mean(mkts10$MARKUP_spec1)
 #avg10
 
-plot(mkts$year,mkts$MARKUP_spec1, type="l", col="blue")
+plot(mkts$year,mkts$MARKUP_spec1, type="l", col="blue",
+      xlab = "Time", ylab = "Markup")
 ```
 
 # Market Concentration
+
+Here we present a slideshow of graphs of various concentration measures:
+
+\begin{itemize}
+  \item CR4
+  \item CR20
+  \item Herfindal-Hirschman (HH) Index
+\end{itemize}
+
+All measures are computed using Compustat firm-level data, so they rely on data
+exclusively on US publicly traded firms. Compustat data has already been cleaned in
+Stata (the file is saved as "compustatclean.do"). 
+Concentration measures are computes firstly at the Naics 4-digit level, then at the
+3-digit one. Aggregation by sector is done according to the sectorization provided in @autor2020.
+For every SIC code employed by Autor, we tracked down the corresponding Naics code and replicated the
+procedure.
+In the end, the best results came from CR4 and HHI computed at the Naics 3 level.
+Nonetheless, the upward trend is not that clear in all sectors: that could be due to multiple factors:
+\begin{itemize}
+  \item We deal only with publicly traded firms, thus it is possible that concentration measures
+        computed are higher, since the denominator is actually smaller than the real size of them
+        corresponding industrial sector if privately owned companies are accounted for.
+  \item The second reason is related to the first one. Since in the 1980s the stock market was 
+        smaller than today, both in absolute value and as a share of the total economy, it is 
+        possible that the concentration measures are biased upward more at the start of the 
+        time series than they are at the end.
+  \item Specifically when using highly detailed sectorization like naics4, in our sample the population
+        of firms in the sector shrinks down to even less than 4 in some cases. It is clear that in those
+        cases, the concentration measure is equal to 1, thus biasing our weighted mean upward. Computing
+        measures at the naics3 level partially accounts for this bias, but not for all sectors, since
+        economic sectors like agriculture are not widely represented in the sample of publicly traded firms.
+\end{itemize}
+
+These are just some of the possible reasons why our upward trend seem to be not so strong in 
+every sector, and not so strong even at the aggregated level for some of the indices.
 
 ```{r mktconc, message=FALSE, warning=FALSE}
 compustat <- data.frame(read_dta("leancompustat.dta"))
@@ -582,7 +626,9 @@ compustat <- compustat %>%
   mutate(n4hhiemp = sum(ratioemp^2)) %>%
   group_by(fyear, AutorClass) %>%
   mutate(Autorsales = sum(sale)) %>%
-  mutate(Autorweight = Autorsales/total_sales)
+  mutate(Autorweightsal = Autorsales/total_sales) %>%
+  mutate(Autoremp = sum(emp)) %>%
+  mutate(Autorweightemp = Autoremp/total_emp)
 
 # Step 2: Calculate cr4 and cr20 with naics3 sector sales and empl
 compustat <- compustat %>%
@@ -611,7 +657,8 @@ n4aggcr <- compustat %>%
   summarize(cr4sal = n4cr4sal, cr20sal = n4cr20sal, cr4emp = n4cr4emp, cr20emp = n4cr20emp,
             naics1 = naics1, naics2 = naics2, sectorweight = sectorweight4, 
             sectorweightemp = sectorweight4emp, sector = sector,
-            hhiemp = n4hhiemp, hhisal = n4hhisal, AutorClass = AutorClass) %>%
+            hhiemp = n4hhiemp, hhisal = n4hhisal, AutorClass = AutorClass, 
+            Autorweightsal = Autorweightsal, Autorweightemp = Autorweightemp) %>%
   group_by(fyear, AutorClass) %>%
   mutate(normalweightsal = sectorweight / sum(sectorweight)) %>%
   mutate(normalweightemp = sectorweightemp / sum(sectorweightemp)) %>%
@@ -622,7 +669,15 @@ n4aggcr <- compustat %>%
             hhisal = weighted.mean(hhisal, normalweightsal),
             hhiemp = weighted.mean(hhiemp, normalweightemp), 
             sectorweightsum = sum(normalweightsal), 
-            sectorweightempsum = sum(normalweightemp))
+            sectorweightempsum = sum(normalweightemp), 
+            Autorweightsal = mean(Autorweightsal), 
+            Autorweightemp = mean(Autorweightemp)) %>%
+  mutate( cr4salagg = weighted.mean(cr4sal, Autorweightsal), 
+          cr4empagg = weighted.mean(cr4emp, Autorweightemp),
+          cr20salagg = weighted.mean(cr20sal, Autorweightsal),
+          cr20empagg = weighted.mean(cr20emp, Autorweightemp),
+          hhisalagg = weighted.mean(hhisal, Autorweightsal),
+          hhiempagg = weighted.mean(hhiemp, Autorweightemp))
 
 
 n3aggcr <- compustat %>%
@@ -630,7 +685,8 @@ n3aggcr <- compustat %>%
   summarize(cr4sal = n3cr4sal,cr20sal=n3cr20sal, cr4emp=n3cr4emp, cr20emp=n3cr20emp,
             naics1=naics1, naics2 = naics2, sectorweight = sectorweight3, 
             sectorweightemp=sectorweight3emp, sector = sector, 
-            hhiemp=n3hhiemp, hhisal=n3hhisal, AutorClass = AutorClass) %>%
+            hhiemp=n3hhiemp, hhisal=n3hhisal, AutorClass = AutorClass, 
+            Autorweightsal = Autorweightsal, Autorweightemp = Autorweightemp) %>%
   group_by(fyear, AutorClass) %>%
   mutate(normalweightsal = sectorweight / sum(sectorweight)) %>%
   mutate(normalweightemp = sectorweightemp / sum(sectorweightemp)) %>%
@@ -641,7 +697,15 @@ n3aggcr <- compustat %>%
             hhisal = weighted.mean(hhisal, normalweightsal),
             hhiemp = weighted.mean(hhiemp, normalweightemp), 
             sectorweightsum = sum(normalweightsal), 
-            sectorweightempsum = sum(normalweightemp))
+            sectorweightempsum = sum(normalweightemp), 
+            Autorweightsal = mean(Autorweightsal), 
+            Autorweightemp = mean(Autorweightemp)) %>%
+  mutate( cr4salagg = weighted.mean(cr4sal, Autorweightsal), 
+          cr4empagg = weighted.mean(cr4emp, Autorweightemp),
+          cr20salagg = weighted.mean(cr20sal, Autorweightsal),
+          cr20empagg = weighted.mean(cr20emp, Autorweightemp),
+          hhisalagg = weighted.mean(hhisal, Autorweightsal),
+          hhiempagg = weighted.mean(hhiemp, Autorweightemp))
 
 
 
@@ -692,6 +756,43 @@ ggplot(n4aggcr, aes(x = fyear, color = AutorClass)) +
   guides(color = "none") +
   theme(legend.position = pos, legend.box = "horizontal")
 
+#Plot of AGGREGATED CR4 with naics4 aggregation
+
+ggplot(n4aggcr, aes(x = fyear, color = AutorClass)) +
+  geom_line(aes(y = cr4salagg, linetype = "CR4 Sal")) +
+  geom_line(aes(y = cr4empagg, linetype = "CR4 Emp")) +
+  labs( x = "Year", y = "CR4", 
+        title = "Time Series of Aggregated CR4 (Naics 4 aggregation)", linetype = "") +
+  scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
+  theme_minimal() +
+  guides(color = "none") +
+  theme(legend.position = pos, legend.box = "horizontal")
+
+#Plot of AGGREGATED CR20 with naics4 aggregation
+
+ggplot(n4aggcr, aes(x = fyear, color = AutorClass)) +
+  geom_line(aes(y = cr20salagg, linetype = "CR20 Sal")) +
+  geom_line(aes(y = cr20empagg, linetype = "CR20 Emp")) +
+  labs( x = "Year", y = "CR20", 
+        title = "Time Series of Aggregated CR20 (Naics 4 aggregation)", linetype = "") +
+  scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
+  theme_minimal() +
+  guides(color = "none") +
+  theme(legend.position = pos, legend.box = "horizontal")
+
+#Plot of AGGREGATED HHI with naics4 aggregation
+
+ggplot(n4aggcr, aes(x = fyear, color = AutorClass)) +
+  geom_line(aes(y = hhisalagg, linetype = "HHI Sal")) +
+  geom_line(aes(y = hhiempagg, linetype = "HHI Emp")) +
+  labs( x = "Year", y = "HHI", 
+        title = "Time Series of Aggregated HHI (Naics 4 aggregation)", linetype = "") +
+  scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
+  theme_minimal() +
+  guides(color = "none") +
+  theme(legend.position = pos, legend.box = "horizontal")
+
+
 # Plot of CR4 with naics3 aggregation
 
 ggplot(n3aggcr, aes(x = fyear, color = AutorClass)) +
@@ -731,29 +832,98 @@ ggplot(n3aggcr, aes(x = fyear, color = AutorClass)) +
   guides(color = "none") +
   theme(legend.position = pos, legend.box = "horizontal")
 
+#Plot of AGGREGATED CR4 with naics3 aggregation
+
+ggplot(n3aggcr, aes(x = fyear, color = AutorClass)) +
+  geom_line(aes(y = cr4salagg, linetype = "CR4 Sal")) +
+  geom_line(aes(y = cr4empagg, linetype = "CR4 Emp")) +
+  labs( x = "Year", y = "CR4", 
+        title = "Time Series of Aggregated CR4 (Naics 3 aggregation)", linetype = "") +
+  scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
+  theme_minimal() +
+  guides(color = "none") +
+  theme(legend.position = pos, legend.box = "horizontal")
+
+#Plot of AGGREGATED CR20 with naics3 aggregation
+
+ggplot(n3aggcr, aes(x = fyear, color = AutorClass)) +
+  geom_line(aes(y = cr20salagg, linetype = "CR20 Sal")) +
+  geom_line(aes(y = cr20empagg, linetype = "CR20 Emp")) +
+  labs( x = "Year", y = "CR20", 
+        title = "Time Series of Aggregated CR20 (Naics 3 aggregation)", linetype = "") +
+  scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
+  theme_minimal() +
+  guides(color = "none") +
+  theme(legend.position = pos, legend.box = "horizontal")
+
+#Plot of AGGREGATED HHI with naics3 aggregation
+
+ggplot(n3aggcr, aes(x = fyear, color = AutorClass)) +
+  geom_line(aes(y = hhisalagg, linetype = "HHI Sal")) +
+  geom_line(aes(y = hhiempagg, linetype = "HHI Emp")) +
+  labs( x = "Year", y = "HHI", 
+        title = "Time Series of Aggregated HHI (Naics 3 aggregation)", linetype = "") +
+  scale_linetype_manual(values = c("solid", "dotted"), labels = c("Sales", "Employment")) +
+  theme_minimal() +
+  guides(color = "none") +
+  theme(legend.position = pos, legend.box = "horizontal")
+
+
 
 # add concentration at the aggregated level and confront sectoral level
 # between markup and concentration
+
+# I selected the time series of aggregated cr4 and HHi with naics3 aggregation, since they're 
+# the ones where the increase between the 1980s and the 2010s is more pronounced 
+
+datatoadd <- n3aggcr %>%
+  group_by(fyear) %>%
+  summarize(cr4salagg = mean(cr4salagg),
+            hhisalagg = mean(hhisalagg))
+
+datatoadd80 = subset(datatoadd,  fyear %in% c(1981:1990) )
+
+datatoadd80 <- datatoadd80 %>%
+  summarize(cr4salagg = mean(cr4salagg),
+            hhisalagg = mean(hhisalagg))
+
+cr4mean80 = datatoadd80$cr4salagg * 100
+hhimean80 = datatoadd80$hhisalagg
+
+datatoadd10 = subset(datatoadd,  fyear %in% c(2011:2019) )
+
+datatoadd10 <- datatoadd10 %>%
+  summarize(cr4salagg = mean(cr4salagg),
+            hhisalagg = mean(hhisalagg))
+
+cr4mean10 = datatoadd10$cr4salagg * 100
+hhimean10 = datatoadd10$hhisalagg
+
+
 ```
 
 # Finalised Output
 
+In this table you can find reported all the average values for the two time frames
+analyzed (1980s and 2010s) for each variable considered. I reported HHI too for concentration,
+but I do not know what is the computed HHI for the model, so, i left it blank.
+
 ```{r output}
 output <- data.frame(
-  Variable = c("GDP growth", "Concentration", "Markup", "Labor share"),
-  `E.1980s` = c(mean80s, 38, avg80, labsh6mean1),
-  `E.2010s` = c(mean10s, 43.5, avg10, labsh6mean2),
-  `E.Delta` = c(mean10s-mean80s, 5.5, avg10-avg80, labsh6mean2-labsh6mean1),
-  `S.1980s` = c(3.97, 7.73, 1.33, 77.96),
-  `S.2010s` = c(2.28, 17.27, 1.47, 74.14),
-  `S.Delta` = c(-1.69, 9.54, 0.15, -3.82)
+  Variable = c("GDP growth", "CR4","HHI", "Markup", "Labor share"),
+  `E.1980s` = c(mean80s, cr4mean80, hhimean80 ,avg80, labsh6mean1),
+  `E.2010s` = c(mean10s, cr4mean10, hhimean10,avg10, labsh6mean2),
+  `E.Delta` = c(mean10s-mean80s, cr4mean10-cr4mean80, hhimean10-hhimean80 ,avg10-avg80, labsh6mean2-labsh6mean1),
+  `S.1980s` = c(3.97, 7.73, 0, 1.33, 77.96),
+  `S.2010s` = c(2.28, 17.27, 0,1.47, 74.14),
+  `S.Delta` = c(-1.69, 9.54, 0, 0.15, -3.82)
 )
 
 # Approximate values to 2 significant digits
-output <- lapply(output, signif, digits = 3)
+output[, -1] <- lapply(output[, -1], signif, digits = 3)
 
 # Create the table and apply styling
-styled_table <- kable(output, format = "latex", caption = "Empirical and Simulated Data") %>%
+styled_table <- kable(output, format = "latex", caption = "Empirical and Simulated Data", digits=2) %>%
   kable_styling(
     latex_options = c("striped", "hold_position"),
     font_size = 14,
